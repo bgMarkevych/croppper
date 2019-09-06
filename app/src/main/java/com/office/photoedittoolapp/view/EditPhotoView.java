@@ -72,8 +72,8 @@ public class EditPhotoView extends FrameLayout implements OnCropScaleListener {
         RectF cropShapeRect = cropView.getCropShapeRect();
         Log.d(TAG, "getCroppedImage: cropShape" + cropShapeRect.toShortString());
         Log.d(TAG, "getCroppedImage: scaled bitmap height" + scaledBitmap.getHeight() + " width " + scaledBitmap.getWidth());
-//        return BitmapUtils.cropBitmap(scaledBitmap, (int) cropShapeRect.left, (int) cropShapeRect.top, (int) cropShapeRect.right, (int) cropShapeRect.bottom);
-        return scaledBitmap;
+        return BitmapUtils.cropBitmap(scaledBitmap, (int) cropShapeRect.left, (int) cropShapeRect.top, (int) (cropShapeRect.right - cropShapeRect.left), (int) (cropShapeRect.bottom - cropShapeRect.top));
+//        return scaledBitmap;
     }
 
     @SuppressLint("DrawAllocation")
