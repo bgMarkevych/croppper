@@ -15,14 +15,38 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
+        android:id="@+id/get_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:text="get image"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/erase"
+        app:layout_constraintTop_toBottomOf="@+id/editView" />
+
+    <Button
         android:id="@+id/crop"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
         android:text="crop"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/erase"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editView" />
+
+    <Button
+        android:id="@+id/erase"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="erase"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/get_image"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/crop"
         app:layout_constraintTop_toBottomOf="@+id/editView" />
 
     <ImageView
@@ -37,72 +61,71 @@
         app:layout_constraintTop_toBottomOf="@+id/crop" />
 
 
+    <!--<SeekBar-->
+    <!--android:id="@+id/brightness"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_margin="16dp"-->
+    <!--android:max="510"-->
+    <!--android:progress="255"-->
+    <!--app:layout_constraintTop_toBottomOf="@+id/rotateMinus"-->
+    <!--tools:layout_editor_absoluteX="16dp" />-->
 
     <!--<SeekBar-->
-        <!--android:id="@+id/brightness"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_margin="16dp"-->
-        <!--android:max="510"-->
-        <!--android:progress="255"-->
-        <!--app:layout_constraintTop_toBottomOf="@+id/rotateMinus"-->
-        <!--tools:layout_editor_absoluteX="16dp" />-->
-
-    <!--<SeekBar-->
-        <!--android:id="@+id/contrast"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_margin="16dp"-->
-        <!--android:max="1000"-->
-        <!--android:progress="100"-->
-        <!--app:layout_constraintTop_toBottomOf="@+id/brightness"-->
-        <!--tools:layout_editor_absoluteX="16dp" />-->
+    <!--android:id="@+id/contrast"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_margin="16dp"-->
+    <!--android:max="1000"-->
+    <!--android:progress="100"-->
+    <!--app:layout_constraintTop_toBottomOf="@+id/brightness"-->
+    <!--tools:layout_editor_absoluteX="16dp" />-->
 
     <!--<Button-->
-        <!--android:id="@+id/undo"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_marginStart="8dp"-->
-        <!--android:layout_marginTop="8dp"-->
-        <!--android:text="undo"-->
-        <!--app:layout_constraintEnd_toStartOf="@+id/save"-->
-        <!--app:layout_constraintHorizontal_bias="0.5"-->
-        <!--app:layout_constraintStart_toStartOf="parent"-->
-        <!--app:layout_constraintTop_toBottomOf="@+id/editView" />-->
+    <!--android:id="@+id/undo"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_marginStart="8dp"-->
+    <!--android:layout_marginTop="8dp"-->
+    <!--android:text="undo"-->
+    <!--app:layout_constraintEnd_toStartOf="@+id/save"-->
+    <!--app:layout_constraintHorizontal_bias="0.5"-->
+    <!--app:layout_constraintStart_toStartOf="parent"-->
+    <!--app:layout_constraintTop_toBottomOf="@+id/editView" />-->
 
     <!--<Button-->
-        <!--android:id="@+id/save"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_marginEnd="8dp"-->
-        <!--android:text="save"-->
-        <!--app:layout_constraintEnd_toEndOf="parent"-->
-        <!--app:layout_constraintHorizontal_bias="0.5"-->
-        <!--app:layout_constraintStart_toEndOf="@+id/undo"-->
-        <!--app:layout_constraintTop_toTopOf="@+id/undo" />-->
+    <!--android:id="@+id/save"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_marginEnd="8dp"-->
+    <!--android:text="save"-->
+    <!--app:layout_constraintEnd_toEndOf="parent"-->
+    <!--app:layout_constraintHorizontal_bias="0.5"-->
+    <!--app:layout_constraintStart_toEndOf="@+id/undo"-->
+    <!--app:layout_constraintTop_toTopOf="@+id/undo" />-->
 
     <!--<Button-->
-        <!--android:id="@+id/rotatePlus"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_marginTop="8dp"-->
-        <!--android:layout_marginEnd="8dp"-->
-        <!--android:text="rotate 90"-->
-        <!--app:layout_constraintEnd_toEndOf="parent"-->
-        <!--app:layout_constraintHorizontal_bias="0.5"-->
-        <!--app:layout_constraintStart_toEndOf="@+id/rotateMinus"-->
-        <!--app:layout_constraintTop_toBottomOf="@+id/save" />-->
+    <!--android:id="@+id/rotatePlus"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_marginTop="8dp"-->
+    <!--android:layout_marginEnd="8dp"-->
+    <!--android:text="rotate 90"-->
+    <!--app:layout_constraintEnd_toEndOf="parent"-->
+    <!--app:layout_constraintHorizontal_bias="0.5"-->
+    <!--app:layout_constraintStart_toEndOf="@+id/rotateMinus"-->
+    <!--app:layout_constraintTop_toBottomOf="@+id/save" />-->
 
     <!--<Button-->
-        <!--android:id="@+id/rotateMinus"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_marginStart="8dp"-->
-        <!--android:layout_marginTop="8dp"-->
-        <!--android:text="rotate -90"-->
-        <!--app:layout_constraintEnd_toStartOf="@+id/rotatePlus"-->
-        <!--app:layout_constraintHorizontal_bias="0.5"-->
-        <!--app:layout_constraintStart_toStartOf="parent"-->
-        <!--app:layout_constraintTop_toBottomOf="@+id/save" />-->
+    <!--android:id="@+id/rotateMinus"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_marginStart="8dp"-->
+    <!--android:layout_marginTop="8dp"-->
+    <!--android:text="rotate -90"-->
+    <!--app:layout_constraintEnd_toStartOf="@+id/rotatePlus"-->
+    <!--app:layout_constraintHorizontal_bias="0.5"-->
+    <!--app:layout_constraintStart_toStartOf="parent"-->
+    <!--app:layout_constraintTop_toBottomOf="@+id/save" />-->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

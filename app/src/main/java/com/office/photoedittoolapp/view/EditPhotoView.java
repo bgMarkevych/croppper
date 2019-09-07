@@ -3,28 +3,28 @@ package com.office.photoedittoolapp.view;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.util.AttributeSet;
-import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.office.photoedittoolapp.R;
 import com.office.photoedittoolapp.tools.BitmapUtils;
 import com.office.photoedittoolapp.tools.OnCropScaleListener;
 import com.office.photoedittoolapp.tools.ScaleController;
 
+import java.util.ArrayList;
+
 
 public class EditPhotoView extends FrameLayout implements OnCropScaleListener {
     private static final String TAG = EditPhotoView.class.getSimpleName();
-
     public EditPhotoView(@NonNull Context context) {
         super(context);
         init(context);
@@ -45,35 +45,95 @@ public class EditPhotoView extends FrameLayout implements OnCropScaleListener {
     private Bitmap originBitmap;
     private Bitmap bitmap;
     private CropOverlayView cropView;
-    private RelativeLayout parent;
+    private EraseView eraseView;
     private ScaleController scaleController;
 
+    private boolean isEraseMode;
+    private boolean isCroppingMode;
+
     private void init(Context context) {
-        parent = (RelativeLayout) LayoutInflater.from(context).inflate(R.layout.crop_view, null);
-        imageView = parent.findViewById(R.id.image_container);
-        cropView = parent.findViewById(R.id.crop_shape);
-        addView(parent);
+        imageView = new ImageView(context);
+        addView(imageView);
+        scaleController = new ScaleController();
+        ViewTreeObserver viewTreeObserver = imageView.getViewTreeObserver();
+        if (viewTreeObserver.isAlive()) {
+            viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    imageView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    int width = imageView.getWidth();
+                    int height = imageView.getHeight();
+                    scaleController.setParentSize(height, width);
+                    bitmap = Bitmap.createScaledBitmap(originBitmap, width, height, true);
+                    imageView.setImageBitmap(bitmap);
+                }
+            });
+        }
     }
 
-    public void setBitmap(Bitmap bitmap) {
+    public void setOriginBitmap(Bitmap bitmap) {
         this.originBitmap = bitmap;
-        scaleController = new ScaleController();
+    }
+
+    public void enableCropMode() {
+        isCroppingMode = true;
+        cropView = new CropOverlayView(getContext());
         cropView.setOnCropScaleListener(this);
+        cropView.setParentSize(getHeight(), getWidth());
+        addView(cropView);
+        requestLayout();
+    }
+
+    public void disableCropMode() {
+        isCroppingMode = false;
+        if (cropView != null) {
+            removeView(cropView);
+            cropView = null;
+        }
+    }
+
+    public boolean isCroppingMode() {
+        return isCroppingMode;
+    }
+
+    public void enableEraseMode() {
+        isEraseMode = true;
+        eraseView = new EraseView(getContext());
+        addView(eraseView);
+    }
+
+    public void disableEraseMode(){
+        isEraseMode = false;
+        if (eraseView != null){
+            removeView(eraseView);
+            eraseView = null;
+        }
+    }
+
+    public boolean isEraseMode(){
+        return isEraseMode;
+    }
+
+    public Bitmap getEraseResult(){
+        Bitmap eraseBitmap = Bitmap.createBitmap(bitmap);
+        Canvas canvas = new Canvas(eraseBitmap);
+        ArrayList<Path> paths = eraseView.getPathArray();
+        for (Path path: paths){
+            canvas.drawPath(path, eraseView.getPathPaint());
+        }
+        return eraseBitmap;
     }
 
     public Bitmap getCroppedImage() {
         float[] scales = scaleController.getScaleFactor();
         Bitmap scaledBitmap = bitmap;
-        if (scales[0] > 0 && scales[1] > 0){
+        if (scales[0] > 0 && scales[1] > 0) {
             PointF scaledPoints = scaleController.getScaledImageCoordinates();
             Bitmap bigBitmap = Bitmap.createScaledBitmap(bitmap, (int) (bitmap.getWidth() * scales[0]), (int) (bitmap.getHeight() * scales[1]), true);
             scaledBitmap = BitmapUtils.cropBitmap(bigBitmap, (int) scaledPoints.x, (int) scaledPoints.y, imageView.getWidth(), imageView.getHeight());
         }
         RectF cropShapeRect = cropView.getCropShapeRect();
-        Log.d(TAG, "getCroppedImage: cropShape" + cropShapeRect.toShortString());
-        Log.d(TAG, "getCroppedImage: scaled bitmap height" + scaledBitmap.getHeight() + " width " + scaledBitmap.getWidth());
         return BitmapUtils.cropBitmap(scaledBitmap, (int) cropShapeRect.left, (int) cropShapeRect.top, (int) (cropShapeRect.right - cropShapeRect.left), (int) (cropShapeRect.bottom - cropShapeRect.top));
-//        return scaledBitmap;
     }
 
     @SuppressLint("DrawAllocation")
@@ -123,11 +183,7 @@ public class EditPhotoView extends FrameLayout implements OnCropScaleListener {
             heightFinal = heightSize;
             setMeasuredDimension(widthSize, heightSize);
         }
-        measureChild(parent, MeasureSpec.makeMeasureSpec(widthFinal, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightFinal, MeasureSpec.EXACTLY));
-        cropView.setParentSize(heightFinal, widthFinal);
-        scaleController.setParentSize(heightFinal, widthFinal);
-        bitmap = Bitmap.createScaledBitmap(originBitmap, widthFinal, heightFinal, true);
-        imageView.setImageBitmap(bitmap);
+        measureChild(imageView, MeasureSpec.makeMeasureSpec(widthFinal, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightFinal, MeasureSpec.EXACTLY));
     }
 
     private int getOnMeasureSpec(int measureSpecMode, int measureSpecSize, int desiredSize) {
