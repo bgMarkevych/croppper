@@ -6,9 +6,9 @@ import android.graphics.RectF;
 import android.util.Log;
 import android.view.MotionEvent;
 
-public class ScaleController {
+public class ScaleAndRotationController {
 
-    private static final String TAG = ScaleController.class.getSimpleName();
+    private static final String TAG = ScaleAndRotationController.class.getSimpleName();
     private Matrix matrix;
     private Matrix savedMatrix;
     private RectF src;
@@ -20,8 +20,9 @@ public class ScaleController {
     private float scaleHeight;
     private boolean isScaling;
     private float[] values = new float[9];
+    private boolean isMultiTouch;
 
-    public ScaleController() {
+    public ScaleAndRotationController() {
         matrix = new Matrix();
         savedMatrix = new Matrix();
         src = new RectF();
@@ -39,27 +40,70 @@ public class ScaleController {
         scaleWidth = bitmapWidth;
     }
 
-    public Matrix onActionDown(MotionEvent event) {
-        savedMatrix.set(matrix);
-        start.set(event.getX(), event.getY());
+    public Matrix onTouchEvent(MotionEvent event, boolean cropFlag, boolean eraseFlag) {
+        int index = event.getActionIndex();
+        Log.d(TAG, "onTouchEvent: index " + index);
+        if (index == 1) {
+            isMultiTouch = true;
+            Log.d(TAG, "onTouchEvent: multitouch");
+        }
+        switch (event.getAction() & event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                onActionDown(event);
+                Log.d(TAG, "onTouchEvent: down");
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (cropFlag) {
+                    break;
+                }
+                if (isMultiTouch) {
+                    Log.d(TAG, "onTouchEvent: scale");
+                    onScale(event);
+                } else {
+                    Log.d(TAG, "onTouchEvent: move");
+                    if (!eraseFlag) {
+                        onMove(event);
+                    }
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                if (isMultiTouch) {
+                    isMultiTouch = false;
+                }
+                Log.d(TAG, "onTouchEvent: up");
+                break;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                onPointerDown(event);
+                Log.d(TAG, "onTouchEvent: pointer down");
+                break;
+            case MotionEvent.ACTION_POINTER_UP:
+                Log.d(TAG, "onTouchEvent: pointer up");
+                onPointerUp();
+                break;
+
+        }
         return matrix;
     }
 
-    public Matrix onPointerDown(MotionEvent event) {
+    private void onActionDown(MotionEvent event) {
+        savedMatrix.set(matrix);
+        start.set(event.getX(), event.getY());
+    }
+
+    private void onPointerDown(MotionEvent event) {
         oldDist = spacing(event);
         if (oldDist > 10f) {
             savedMatrix.set(matrix);
             isScaling = true;
             midPoint(mid, event);
         }
-        return matrix;
     }
 
-    public void onPointerUp() {
+    private void onPointerUp() {
         isScaling = false;
     }
 
-    public Matrix onScale(MotionEvent event) {
+    private void onScale(MotionEvent event) {
         if (isScaling) {
             double newDist = spacing(event);
             if (newDist > 10f) {
@@ -69,10 +113,9 @@ public class ScaleController {
                 correctScaleCoordinates();
             }
         }
-        return matrix;
     }
 
-    public Matrix onMove(MotionEvent event) {
+    private void onMove(MotionEvent event) {
         if (scaleHeight != src.bottom && scaleWidth != src.right) {
             float dx = event.getX() - start.x;
             float dy = event.getY() - start.y;
@@ -80,7 +123,6 @@ public class ScaleController {
             matrix.postTranslate(dx, dy);
             correctMoveCoordinates();
         }
-        return matrix;
     }
 
     private void correctScaleCoordinates() {
@@ -116,7 +158,7 @@ public class ScaleController {
         matrix.setValues(values);
         matrix.mapRect(dst, src);
         Log.d(TAG, "correctMoveCoordinates: " + dst.toShortString());
-        Log.d(TAG, "correctScaleCoordinates: float " + scaleHeight + " int" + (int)scaleWidth);
+        Log.d(TAG, "correctScaleCoordinates: float " + scaleHeight + " int" + (int) scaleWidth);
     }
 
     private double spacing(MotionEvent event) {
@@ -145,4 +187,40 @@ public class ScaleController {
         return scales;
     }
 
+    private void rotateImage(int degrees) {
+        matrix.set(savedMatrix);
+        matrix.postRotate(degrees, src.right/2, src.bottom/2);
+        savedMatrix.set(matrix);
+    }
+
+    public Matrix rotateRight() {
+        rotateImage(90);
+        return matrix;
+    }
+
+    public Matrix rotateLeft() {
+        rotateImage(-90);
+        return matrix;
+    }
+
+    private void flipImage(float sx, float sy) {
+        matrix.set(savedMatrix);
+        matrix.postScale(sx, sy, src.right/2, src.bottom/2);
+        savedMatrix.set(matrix);
+    }
+
+    public Matrix flipVertical() {
+        flipImage(1, -1);
+        return matrix;
+    }
+
+    public Matrix flipHorizontal() {
+        flipImage(-1, 1);
+        return matrix;
+    }
+
+    public boolean isScaled() {
+        float[] scales = getScaleFactor();
+        return scales[0] > 0 && scales[1] > 0;
+    }
 }

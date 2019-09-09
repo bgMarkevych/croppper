@@ -2,11 +2,11 @@ package com.office.photoedittoolapp.tools;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 
 public class BitmapUtils {
 
@@ -37,9 +37,10 @@ public class BitmapUtils {
         return tempBitmap;
     }
 
-    public static Bitmap changeZoom(Bitmap bitmap, float scale) {
-        return Bitmap.createScaledBitmap(bitmap, (int) (bitmap.getWidth() * scale), (int) (bitmap.getHeight() * scale), true);
+    public static Bitmap flipImage(Bitmap bitmap, float sx, float sy) {
+        Matrix matrix = new Matrix();
+        matrix.postScale(sx, sy, bitmap.getWidth()/2f, bitmap.getHeight()/2f);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
     }
-
 
 }

@@ -9,21 +9,20 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.ViewTreeObserver;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.office.photoedittoolapp.tools.BitmapUtils;
 import com.office.photoedittoolapp.tools.OnCropScaleListener;
-import com.office.photoedittoolapp.tools.ScaleController;
+import com.office.photoedittoolapp.tools.ScaleAndRotationController;
 
 import java.util.ArrayList;
 
 
-public class EditPhotoView extends FrameLayout implements OnCropScaleListener {
+public class EditPhotoView extends RelativeLayout implements OnCropScaleListener {
     private static final String TAG = EditPhotoView.class.getSimpleName();
     public EditPhotoView(@NonNull Context context) {
         super(context);
@@ -44,31 +43,24 @@ public class EditPhotoView extends FrameLayout implements OnCropScaleListener {
     private ImageView imageView;
     private Bitmap originBitmap;
     private Bitmap bitmap;
+//    private RelativeLayout parent;
     private CropOverlayView cropView;
     private EraseView eraseView;
-    private ScaleController scaleController;
+    private ScaleAndRotationController scaleController;
 
     private boolean isEraseMode;
     private boolean isCroppingMode;
 
     private void init(Context context) {
+//        parent = (RelativeLayout) LayoutInflater.from(context).inflate(R.layout.crop_view, null);
         imageView = new ImageView(context);
+        cropView = new CropOverlayView(context);
+        cropView.setOnCropScaleListener(this);
+        eraseView = new EraseView(context);
         addView(imageView);
-        scaleController = new ScaleController();
-        ViewTreeObserver viewTreeObserver = imageView.getViewTreeObserver();
-        if (viewTreeObserver.isAlive()) {
-            viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    imageView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                    int width = imageView.getWidth();
-                    int height = imageView.getHeight();
-                    scaleController.setParentSize(height, width);
-                    bitmap = Bitmap.createScaledBitmap(originBitmap, width, height, true);
-                    imageView.setImageBitmap(bitmap);
-                }
-            });
-        }
+        addView(cropView);
+        addView(eraseView);
+        scaleController = new ScaleAndRotationController();
     }
 
     public void setOriginBitmap(Bitmap bitmap) {
@@ -77,11 +69,6 @@ public class EditPhotoView extends FrameLayout implements OnCropScaleListener {
 
     public void enableCropMode() {
         isCroppingMode = true;
-        cropView = new CropOverlayView(getContext());
-        cropView.setOnCropScaleListener(this);
-        cropView.setParentSize(getHeight(), getWidth());
-        addView(cropView);
-        requestLayout();
     }
 
     public void disableCropMode() {
@@ -184,6 +171,10 @@ public class EditPhotoView extends FrameLayout implements OnCropScaleListener {
             setMeasuredDimension(widthSize, heightSize);
         }
         measureChild(imageView, MeasureSpec.makeMeasureSpec(widthFinal, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightFinal, MeasureSpec.EXACTLY));
+        scaleController.setParentSize(heightFinal, widthFinal);
+        cropView.setParentSize(heightFinal, widthFinal);
+        bitmap = Bitmap.createScaledBitmap(originBitmap, widthFinal, heightFinal, true);
+        imageView.setImageBitmap(bitmap);
     }
 
     private int getOnMeasureSpec(int measureSpecMode, int measureSpecSize, int desiredSize) {
@@ -200,27 +191,27 @@ public class EditPhotoView extends FrameLayout implements OnCropScaleListener {
 
     @Override
     public void onActionDown(MotionEvent event) {
-        imageView.setImageMatrix(scaleController.onActionDown(event));
+//        imageView.setImageMatrix(scaleController.onActionDown(event));
     }
 
     @Override
     public void onPointerDown(MotionEvent event) {
-        imageView.setImageMatrix(scaleController.onPointerDown(event));
+//        imageView.setImageMatrix(scaleController.onPointerDown(event));
     }
 
     @Override
     public void onScale(MotionEvent event) {
-        imageView.setImageMatrix(scaleController.onScale(event));
+//        imageView.setImageMatrix(scaleController.onScale(event));
     }
 
     @Override
     public void onPointerUp(MotionEvent event) {
-        scaleController.onPointerUp();
+//        scaleController.onPointerUp();
     }
 
     @Override
     public void onMove(MotionEvent event) {
-        imageView.setImageMatrix(scaleController.onMove(event));
+//        imageView.setImageMatrix(scaleController.onMove(event));
     }
 
 }
