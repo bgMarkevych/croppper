@@ -6,20 +6,20 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.SeekBar;
 
-import com.office.photoedittoolapp.view.EditPhotoView;
 import com.office.photoedittoolapp.view.PhotoEditor;
 
 public class MainActivity extends AppCompatActivity {
+
+    boolean undo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         PhotoEditor editPhotoView = findViewById(R.id.editView);
-        final Bitmap finalBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.white);
+        final Bitmap finalBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.image);
         editPhotoView.setOriginBitmap(finalBitmap);
         editPhotoView.setEraseMode(true);
 
@@ -28,7 +28,9 @@ public class MainActivity extends AppCompatActivity {
         seekBrightness.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                editPhotoView.changeBrightnessAndContrast(progress, seekContrast.getProgress());
+                if (!undo){
+                    editPhotoView.changeBrightnessAndContrast(progress, seekContrast.getProgress());
+                }
             }
 
             @Override
@@ -38,13 +40,14 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                editPhotoView.saveFinishBrightnessAndContrast(seekBrightness.getProgress(), seekContrast.getProgress());
             }
         });
         seekContrast.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                editPhotoView.changeBrightnessAndContrast(seekBrightness.getProgress(), progress);
+                if (!undo){
+                    editPhotoView.changeBrightnessAndContrast(seekBrightness.getProgress(), progress);
+                }
             }
 
             @Override
@@ -54,14 +57,15 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                editPhotoView.saveFinishBrightnessAndContrast(seekBrightness.getProgress(), seekContrast.getProgress());
             }
         });
-        editPhotoView.setUndoReundoListener(new PhotoEditor.UndoReundoListener() {
+        editPhotoView.setAdjustUndoReundoListener(new PhotoEditor.AdjustUndoReundoListener() {
             @Override
             public void undo(int brightness, float contrast) {
+                undo = true;
                 seekBrightness.setProgress(brightness + 255);
                 seekContrast.setProgress((int) (contrast * 100));
+                undo = false;
             }
 
             @Override

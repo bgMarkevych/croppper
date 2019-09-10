@@ -1,7 +1,5 @@
 package com.office.photoedittoolapp.tools;
 
-import android.annotation.TargetApi;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -9,18 +7,7 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
-import android.os.Build;
-import android.os.Parcel;
-import android.os.Parcelable;
-import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
-import android.view.View;
-
-import androidx.annotation.Nullable;
-
-import com.office.photoedittoolapp.tools.OnCropScaleListener;
-import com.office.photoedittoolapp.tools.TouchType;
 
 
 public class CropController {

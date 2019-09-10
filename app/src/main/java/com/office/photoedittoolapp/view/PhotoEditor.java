@@ -19,9 +19,15 @@ import androidx.annotation.Nullable;
 import com.office.photoedittoolapp.operations.ContrastAndBrightnessOperation;
 import com.office.photoedittoolapp.operations.EditOperation;
 import com.office.photoedittoolapp.operations.EraseOperation;
+import com.office.photoedittoolapp.operations.FlipHorizontalOperation;
+import com.office.photoedittoolapp.operations.FlipVerticalOperation;
+import com.office.photoedittoolapp.operations.LeftRotationOperation;
+import com.office.photoedittoolapp.operations.RightRotationOperation;
+import com.office.photoedittoolapp.tools.BitmapState;
 import com.office.photoedittoolapp.tools.BitmapUtils;
 import com.office.photoedittoolapp.tools.CropController;
 import com.office.photoedittoolapp.tools.EraseController;
+import com.office.photoedittoolapp.tools.OperationResultContainer;
 import com.office.photoedittoolapp.tools.ScaleAndRotationController;
 
 import java.util.ArrayList;
@@ -52,11 +58,12 @@ public class PhotoEditor extends View implements EraseController.OnSaveEraseResu
     private ScaleAndRotationController scaleAndRotationController;
     private CropController cropController;
     private EraseController eraseController;
-    private UndoReundoListener undoReundoListener;
+    private AdjustUndoReundoListener adjustUndoReundoListener;
 
     private RectF bitmapDst = new RectF();
     private Matrix matrix = new Matrix();
     private Matrix zeroMatrix = new Matrix();
+    private BitmapState state = new BitmapState();
 
     private Stack<EditOperation> operations;
     private Stack<EditOperation> undoOperations;
@@ -86,8 +93,8 @@ public class PhotoEditor extends View implements EraseController.OnSaveEraseResu
         }
     }
 
-    public void setUndoReundoListener(UndoReundoListener undoReundoListener) {
-        this.undoReundoListener = undoReundoListener;
+    public void setAdjustUndoReundoListener(AdjustUndoReundoListener adjustUndoReundoListener) {
+        this.adjustUndoReundoListener = adjustUndoReundoListener;
     }
 
     private void init() {
@@ -210,7 +217,12 @@ public class PhotoEditor extends View implements EraseController.OnSaveEraseResu
      * @param contrast   must be in range 0 ... 1000
      **/
     public void changeBrightnessAndContrast(int brightness, float contrast) {
-        tempBitmap = BitmapUtils.changeBrightnessAndContrast(tempBitmap, brightness - 255, contrast / 100f);
+        ContrastAndBrightnessOperation operation = (ContrastAndBrightnessOperation) operations.peek();
+        operation.contrast = contrast / 100;
+        operation.brightness = brightness - 255;
+        OperationResultContainer container = operation.doOperation(scaledBitmap, state);
+        tempBitmap = container.bitmap;
+        state = container.bitmapState;
         invalidate();
     }
 
@@ -219,35 +231,39 @@ public class PhotoEditor extends View implements EraseController.OnSaveEraseResu
         operations.add(operation);
     }
 
-    public void saveFinishBrightnessAndContrast(int brightness, float contrast) {
-        EditOperation operation = operations.pop();
-        if (operation instanceof ContrastAndBrightnessOperation) {
-            ContrastAndBrightnessOperation contrastAndBrightnessOperation = (ContrastAndBrightnessOperation) operation;
-            contrastAndBrightnessOperation.brightness = brightness;
-            contrastAndBrightnessOperation.contrast = contrast;
-            operations.add(contrastAndBrightnessOperation);
-        } else {
-            operations.add(operation);
-        }
-    }
-
     public void rotateRight() {
-        tempBitmap = BitmapUtils.rotateBitmap(tempBitmap, 90);
+        RightRotationOperation operation = new RightRotationOperation();
+        operations.add(operation);
+        OperationResultContainer container = operation.doOperation(scaledBitmap, state);
+        tempBitmap = container.bitmap;
+        state = container.bitmapState;
         invalidate();
     }
 
     public void rotateLeft() {
-        tempBitmap = BitmapUtils.rotateBitmap(tempBitmap, -90);
+        LeftRotationOperation operation = new LeftRotationOperation();
+        operations.add(operation);
+        OperationResultContainer container = operation.doOperation(scaledBitmap, state);
+        tempBitmap = container.bitmap;
+        state = container.bitmapState;
         invalidate();
     }
 
     public void flipVertical() {
-        tempBitmap = BitmapUtils.flipImage(tempBitmap, 1, -1);
+        FlipVerticalOperation operation = new FlipVerticalOperation();
+        operations.add(operation);
+        OperationResultContainer container = operation.doOperation(scaledBitmap, state);
+        tempBitmap = container.bitmap;
+        state = container.bitmapState;
         invalidate();
     }
 
     public void flipHorizontal() {
-        tempBitmap = BitmapUtils.flipImage(tempBitmap, -1, 1);
+        FlipHorizontalOperation operation = new FlipHorizontalOperation();
+        operations.add(operation);
+        OperationResultContainer container = operation.doOperation(scaledBitmap, state);
+        tempBitmap = container.bitmap;
+        state = container.bitmapState;
         invalidate();
     }
 
@@ -255,8 +271,7 @@ public class PhotoEditor extends View implements EraseController.OnSaveEraseResu
     @Override
     public void saveEraseResult() {
         EraseOperation operation = new EraseOperation(eraseController.getPathPaint());
-        Log.d(TAG, "saveEraseResult: " + operations.size());
-        for (int i = operations.size() - 1; i >= 0; i++) {
+        for (int i = operations.size() - 1; i >= 0; i--) {
             EditOperation editOperation = operations.get(i);
             if (editOperation instanceof EraseOperation) {
                 operation.paths.addAll(((EraseOperation) editOperation).paths);
@@ -265,7 +280,9 @@ public class PhotoEditor extends View implements EraseController.OnSaveEraseResu
         }
         operation.paths.addAll(eraseController.getPathArray());
         operations.add(operation);
-        tempBitmap = operation.doOperation(scaledBitmap);
+        OperationResultContainer container = operation.doOperation(scaledBitmap, state);
+        state = container.bitmapState;
+        tempBitmap = container.bitmap;
         invalidate();
     }
 
@@ -275,14 +292,18 @@ public class PhotoEditor extends View implements EraseController.OnSaveEraseResu
         }
         EditOperation editOperation = operations.pop();
         undoOperations.add(editOperation);
-        if (editOperation instanceof ContrastAndBrightnessOperation){
-            undoReundoListener.undo(((ContrastAndBrightnessOperation) editOperation).prevBrightness, ((ContrastAndBrightnessOperation) editOperation).prevContrast);
+        if (editOperation instanceof ContrastAndBrightnessOperation) {
+            if (adjustUndoReundoListener != null){
+                adjustUndoReundoListener.undo(((ContrastAndBrightnessOperation) editOperation).prevBrightness, ((ContrastAndBrightnessOperation) editOperation).prevContrast);
+            }
         }
-        tempBitmap = editOperation.undoOperation(scaledBitmap);
+        OperationResultContainer container = editOperation.undoOperation(scaledBitmap, state);
+        state = container.bitmapState;
+        tempBitmap = container.bitmap;
         invalidate();
     }
 
-    public interface UndoReundoListener {
+    public interface AdjustUndoReundoListener {
         void undo(int brightness, float contrast);
 
         void reundo(int brightness, float contrast);
