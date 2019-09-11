@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 
 import com.office.photoedittoolapp.view.PhotoEditor;
@@ -28,14 +29,14 @@ public class MainActivity extends AppCompatActivity {
         seekBrightness.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (!undo){
-                    editPhotoView.changeBrightnessAndContrast(progress, seekContrast.getProgress());
+                if (!undo) {
+                    editPhotoView.changeAdjust(progress, seekContrast.getProgress());
                 }
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-                editPhotoView.saveStartBrightnessAndContrast(seekBrightness.getProgress(), seekContrast.getProgress());
+                editPhotoView.saveBitmapState(seekBrightness.getProgress(), seekContrast.getProgress());
             }
 
             @Override
@@ -45,14 +46,14 @@ public class MainActivity extends AppCompatActivity {
         seekContrast.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (!undo){
-                    editPhotoView.changeBrightnessAndContrast(seekBrightness.getProgress(), progress);
+                if (!undo) {
+                    editPhotoView.changeAdjust(seekBrightness.getProgress(), progress);
                 }
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-                editPhotoView.saveStartBrightnessAndContrast(seekBrightness.getProgress(), seekContrast.getProgress());
+                editPhotoView.saveBitmapState(seekBrightness.getProgress(), seekContrast.getProgress());
             }
 
             @Override
@@ -91,13 +92,11 @@ public class MainActivity extends AppCompatActivity {
 //                editPhotoView.enableCropMode();
 //            }
 //        });
-//        getImage.setOnClickListener(v -> {
-//            if (editPhotoView.isCroppingMode()){
-//                imageView.setImageBitmap(editPhotoView.getCroppedImage());
-//            } else {
-//                imageView.setImageBitmap(editPhotoView.getEraseResult());
-//            }
-//        });
+        Button getImage = findViewById(R.id.get_image);
+        ImageView imageView = findViewById(R.id.temp);
+        getImage.setOnClickListener(v -> {
+            imageView.setImageBitmap(editPhotoView.getImage());
+        });
         Button right = findViewById(R.id.right);
         right.setOnClickListener(v -> {
             editPhotoView.rotateRight();

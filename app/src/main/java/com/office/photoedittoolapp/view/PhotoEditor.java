@@ -4,36 +4,29 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
 
 import androidx.annotation.Nullable;
 
-import com.office.photoedittoolapp.operations.ContrastAndBrightnessOperation;
-import com.office.photoedittoolapp.operations.EditOperation;
-import com.office.photoedittoolapp.operations.EraseOperation;
-import com.office.photoedittoolapp.operations.FlipHorizontalOperation;
-import com.office.photoedittoolapp.operations.FlipVerticalOperation;
-import com.office.photoedittoolapp.operations.LeftRotationOperation;
-import com.office.photoedittoolapp.operations.RightRotationOperation;
 import com.office.photoedittoolapp.tools.BitmapState;
-import com.office.photoedittoolapp.tools.BitmapUtils;
 import com.office.photoedittoolapp.tools.CropController;
 import com.office.photoedittoolapp.tools.EraseController;
-import com.office.photoedittoolapp.tools.OperationResultContainer;
 import com.office.photoedittoolapp.tools.ScaleAndRotationController;
 
 import java.util.ArrayList;
-import java.util.Stack;
 
-public class PhotoEditor extends View implements EraseController.OnSaveEraseResultListener {
+public class PhotoEditor extends View implements EraseController.EraseStateChangeListener {
 
     private static final String TAG = PhotoEditor.class.getSimpleName();
 
@@ -59,14 +52,15 @@ public class PhotoEditor extends View implements EraseController.OnSaveEraseResu
     private CropController cropController;
     private EraseController eraseController;
     private AdjustUndoReundoListener adjustUndoReundoListener;
+    private ArrayList<BitmapState> states = new ArrayList<>();
+    private BitmapState currentState;
 
+    private Paint adjustPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private RectF bitmapDst = new RectF();
     private Matrix matrix = new Matrix();
     private Matrix zeroMatrix = new Matrix();
-    private BitmapState state = new BitmapState();
-
-    private Stack<EditOperation> operations;
-    private Stack<EditOperation> undoOperations;
+    private ColorMatrix colorMatrix = new ColorMatrix();
+    private ColorMatrixColorFilter colorMatrixColorFilter;
 
     private boolean isEraseMode;
     private boolean isCroppingMode;
@@ -75,8 +69,6 @@ public class PhotoEditor extends View implements EraseController.OnSaveEraseResu
     public void setOriginBitmap(Bitmap bitmap) {
         this.originBitmap = bitmap;
         tempBitmap = originBitmap;
-        operations = new Stack<>();
-        undoOperations = new Stack<>();
         ViewTreeObserver viewTreeObserver = getViewTreeObserver();
         if (viewTreeObserver.isAlive()) {
             viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -100,7 +92,9 @@ public class PhotoEditor extends View implements EraseController.OnSaveEraseResu
     private void init() {
         scaleAndRotationController = new ScaleAndRotationController();
         cropController = new CropController();
-        eraseController = new EraseController(this);
+        eraseController = new EraseController();
+        eraseController.setEraseStateChangeListener(this);
+        currentState = new BitmapState();
     }
 
     @Override
@@ -110,13 +104,17 @@ public class PhotoEditor extends View implements EraseController.OnSaveEraseResu
         bitmapDst.bottom = getHeight();
         sidesAspect = (float) originBitmap.getHeight() / getHeight();
         canvas.setMatrix(matrix);
-        canvas.drawBitmap(tempBitmap, null, bitmapDst, null);
+        canvas.rotate(currentState.getRotate(), getWidth() / 2f, getHeight() / 2f);
+        if (colorMatrixColorFilter != null) {
+            adjustPaint.setColorFilter(colorMatrixColorFilter);
+        }
+        canvas.drawBitmap(tempBitmap, null, bitmapDst, adjustPaint);
         if (isCroppingMode) {
             canvas.setMatrix(zeroMatrix);
             cropController.onDraw(canvas);
         }
-        if (isEraseMode || eraseController.getPathArray().size() != 0) {
-            eraseController.onDraw(canvas);
+        if (isEraseMode) {
+            eraseController.onDraw(canvas, currentState, getWidth(), getHeight());
         }
         canvas.restore();
     }
@@ -129,16 +127,6 @@ public class PhotoEditor extends View implements EraseController.OnSaveEraseResu
     public void setEraseMode(boolean eraseMode) {
         isEraseMode = eraseMode;
         invalidate();
-    }
-
-    public Bitmap saveCropResult() {
-        Canvas canvas = new Canvas(tempBitmap);
-        ArrayList<Path> paths = eraseController.getPathArray();
-        Paint paint = eraseController.getPathPaint();
-        for (Path path : paths) {
-            canvas.drawPath(path, paint);
-        }
-        return tempBitmap;
     }
 
     @Override
@@ -216,90 +204,98 @@ public class PhotoEditor extends View implements EraseController.OnSaveEraseResu
      * @param brightness must be in range between 0 and 510
      * @param contrast   must be in range 0 ... 1000
      **/
-    public void changeBrightnessAndContrast(int brightness, float contrast) {
-        ContrastAndBrightnessOperation operation = (ContrastAndBrightnessOperation) operations.peek();
-        operation.contrast = contrast / 100;
-        operation.brightness = brightness - 255;
-        OperationResultContainer container = operation.doOperation(scaledBitmap, state);
-        tempBitmap = container.bitmap;
-        state = container.bitmapState;
+    public void changeAdjust(int brightness, float contrast) {
+        currentState.brightness = brightness - 255;
+        currentState.contrast = contrast / 100;
+        updateColorMatrix();
         invalidate();
     }
 
-    public void saveStartBrightnessAndContrast(int prevBrightness, float prevContrast) {
-        ContrastAndBrightnessOperation operation = new ContrastAndBrightnessOperation(prevContrast / 100, prevBrightness - 255);
-        operations.add(operation);
+    public void saveBitmapState(int brightness, float contrast) {
+        states.add(currentState);
+        BitmapState bitmapState = new BitmapState(currentState);
+        bitmapState.brightness = brightness - 255;
+        bitmapState.contrast = contrast / 100;
+        currentState = bitmapState;
+    }
+
+    private void updateColorMatrix(){
+        float[] values = new float[]
+                {
+                        currentState.contrast, 0, 0, 0, currentState.brightness,
+                        0, currentState.contrast, 0, 0, currentState.brightness,
+                        0, 0, currentState.contrast, 0, currentState.brightness,
+                        0, 0, 0, 1, 0
+                };
+        colorMatrix.set(values);
+        colorMatrixColorFilter = new ColorMatrixColorFilter(colorMatrix);
     }
 
     public void rotateRight() {
-        RightRotationOperation operation = new RightRotationOperation();
-        operations.add(operation);
-        OperationResultContainer container = operation.doOperation(scaledBitmap, state);
-        tempBitmap = container.bitmap;
-        state = container.bitmapState;
+        BitmapState state = new BitmapState(currentState);
+        state.setRotate(-90);
+        states.add(currentState);
+        currentState = state;
         invalidate();
     }
 
     public void rotateLeft() {
-        LeftRotationOperation operation = new LeftRotationOperation();
-        operations.add(operation);
-        OperationResultContainer container = operation.doOperation(scaledBitmap, state);
-        tempBitmap = container.bitmap;
-        state = container.bitmapState;
+        BitmapState state = new BitmapState(currentState);
+        state.setRotate(90);
+        states.add(currentState);
+        currentState = state;
         invalidate();
     }
 
     public void flipVertical() {
-        FlipVerticalOperation operation = new FlipVerticalOperation();
-        operations.add(operation);
-        OperationResultContainer container = operation.doOperation(scaledBitmap, state);
-        tempBitmap = container.bitmap;
-        state = container.bitmapState;
+        Matrix matrix = new Matrix();
+        states.add(currentState);
+        BitmapState state = new BitmapState(currentState);
+        matrix.preScale(1, -1, getWidth() / 2f, getHeight() / 2f);
+        state.flipMatrix = matrix;
+        currentState = state;
+        tempBitmap = Bitmap.createBitmap(tempBitmap, 0, 0, tempBitmap.getWidth(), tempBitmap.getHeight(), matrix, true);
         invalidate();
     }
 
     public void flipHorizontal() {
-        FlipHorizontalOperation operation = new FlipHorizontalOperation();
-        operations.add(operation);
-        OperationResultContainer container = operation.doOperation(scaledBitmap, state);
-        tempBitmap = container.bitmap;
-        state = container.bitmapState;
+        Matrix matrix = new Matrix();
+        BitmapState state = new BitmapState(currentState);
+        states.add(currentState);
+        matrix.preScale(-1, 1, getWidth() / 2f, getHeight() / 2f);
+        state.flipMatrix = matrix;
+        currentState = state;
+        tempBitmap = Bitmap.createBitmap(tempBitmap, 0, 0, tempBitmap.getWidth(), tempBitmap.getHeight(), matrix, true);
         invalidate();
     }
 
-
-    @Override
-    public void saveEraseResult() {
-        EraseOperation operation = new EraseOperation(eraseController.getPathPaint());
-        for (int i = operations.size() - 1; i >= 0; i--) {
-            EditOperation editOperation = operations.get(i);
-            if (editOperation instanceof EraseOperation) {
-                operation.paths.addAll(((EraseOperation) editOperation).paths);
-                break;
-            }
-        }
-        operation.paths.addAll(eraseController.getPathArray());
-        operations.add(operation);
-        OperationResultContainer container = operation.doOperation(scaledBitmap, state);
-        state = container.bitmapState;
-        tempBitmap = container.bitmap;
-        invalidate();
-    }
 
     public void undo() {
-        if (operations.size() == 0) {
-            return;
-        }
-        EditOperation editOperation = operations.pop();
-        undoOperations.add(editOperation);
-        if (editOperation instanceof ContrastAndBrightnessOperation) {
+        if (states.size() != 0) {
+            currentState = states.remove(states.size() - 1);
+            eraseController.setPaths(currentState.getPaths());
+//            tempBitmap = Bitmap.createBitmap(tempBitmap, 0, 0, tempBitmap.getWidth(), tempBitmap.getHeight(), currentState.flipMatrix, true);
+            updateColorMatrix();
             if (adjustUndoReundoListener != null){
-                adjustUndoReundoListener.undo(((ContrastAndBrightnessOperation) editOperation).prevBrightness, ((ContrastAndBrightnessOperation) editOperation).prevContrast);
+                adjustUndoReundoListener.undo(currentState.brightness, currentState.contrast);
             }
         }
-        OperationResultContainer container = editOperation.undoOperation(scaledBitmap, state);
-        state = container.bitmapState;
-        tempBitmap = container.bitmap;
+        invalidate();
+    }
+
+    public Bitmap getImage() {
+        Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        draw(canvas);
+        return bitmap;
+    }
+
+    @Override
+    public void eraseStateChanged(ArrayList<Pair<Path, Integer>> paths) {
+        BitmapState state = new BitmapState(currentState);
+        state.setPaths(paths);
+        states.add(currentState);
+        currentState = state;
         invalidate();
     }
 

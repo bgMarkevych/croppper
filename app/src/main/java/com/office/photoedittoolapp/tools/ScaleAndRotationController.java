@@ -40,6 +40,10 @@ public class ScaleAndRotationController {
         scaleWidth = bitmapWidth;
     }
 
+    public void setMatrix(Matrix matrix) {
+        this.matrix = matrix;
+    }
+
     public Matrix onTouchEvent(MotionEvent event, boolean cropFlag, boolean eraseFlag) {
         int index = event.getActionIndex();
         Log.d(TAG, "onTouchEvent: index " + index);

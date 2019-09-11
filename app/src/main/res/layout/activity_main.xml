@@ -49,15 +49,15 @@
         app:layout_constraintStart_toEndOf="@+id/crop"
         app:layout_constraintTop_toBottomOf="@+id/editView" />
 
-    <!--<ImageView-->
-    <!--android:id="@+id/temp"-->
-    <!--android:layout_width="200dp"-->
-    <!--android:layout_height="200dp"-->
-    <!--android:layout_marginStart="8dp"-->
-    <!--android:layout_marginEnd="8dp"-->
-    <!--app:layout_constraintEnd_toEndOf="parent"-->
-    <!--app:layout_constraintStart_toStartOf="parent"-->
-    <!--app:layout_constraintTop_toBottomOf="@+id/contrast" />-->
+    <ImageView
+    android:id="@+id/temp"
+    android:layout_width="200dp"
+    android:layout_height="200dp"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/contrast" />
 
 
     <SeekBar

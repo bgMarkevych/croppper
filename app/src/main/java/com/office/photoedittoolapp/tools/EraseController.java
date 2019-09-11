@@ -8,7 +8,7 @@ import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
-import android.util.Log;
+import android.util.Pair;
 import android.view.MotionEvent;
 
 import java.util.ArrayList;
@@ -16,19 +16,27 @@ import java.util.ArrayList;
 public class EraseController {
     private static final String TAG = EraseController.class.getSimpleName();
 
-    public EraseController(OnSaveEraseResultListener onSaveEraseResultListener) {
+    public EraseController() {
         initEraseTools();
-        this.onSaveEraseResultListener = onSaveEraseResultListener;
     }
-
 
     private Paint pathPaint;
     private Path path;
     private int strokeWidth = 10;
-    private ArrayList<Path> paths;
+    private BitmapState state;
+    private ArrayList<Pair<Path, Integer>> paths;
     private boolean isMultiTouch;
     private Rect canvasRect;
-    private OnSaveEraseResultListener onSaveEraseResultListener;
+    private EraseStateChangeListener eraseStateChangeListener;
+
+    public void setEraseStateChangeListener(EraseStateChangeListener eraseStateChangeListener) {
+        this.eraseStateChangeListener = eraseStateChangeListener;
+    }
+
+    public void setPaths(ArrayList<Pair<Path, Integer>> paths) {
+        this.paths.clear();
+        this.paths.addAll(paths);
+    }
 
     public void setStrokeWidth(int width) {
         strokeWidth = width;
@@ -45,17 +53,22 @@ public class EraseController {
         paths = new ArrayList<>();
     }
 
-    public void onDraw(Canvas canvas) {
+    public void onDraw(Canvas canvas, BitmapState state, int width, int height) {
+        this.state = state;
         canvasRect = canvas.getClipBounds();
+        float cx = width / 2f;
+        float cy = height / 2f;
         canvas.save();
-        for (Path path : paths) {
-            canvas.drawPath(path, pathPaint);
+        for (int i = 0; i < paths.size(); i++) {
+            int rotate = paths.get(i).second;
+            canvas.rotate(-rotate, cx, cy);
+            canvas.drawPath(paths.get(i).first, pathPaint);
+            canvas.rotate(rotate, cx, cy);
         }
         canvas.restore();
     }
 
     public boolean onTouchEvent(MotionEvent event, Matrix matrix) {
-        Log.d("TOUCH", "onTouchEvent: " + event.getAction() + " fingers count: " + event.getPointerCount());
         float[] values = new float[9];
         matrix.getValues(values);
         float X = event.getX() / values[Matrix.MSCALE_X] + canvasRect.left;
@@ -78,12 +91,11 @@ public class EraseController {
                 path.reset();
                 path.transform(matrix);
                 path.moveTo(X, Y);
-                paths.add(path);
+                paths.add(new Pair<>(path, state.getRotate()));
                 return true;
             case MotionEvent.ACTION_UP:
                 path = new Path();
-                onSaveEraseResultListener.saveEraseResult();
-                paths.clear();
+                eraseStateChangeListener.eraseStateChanged(paths);
                 break;
             default:
                 return false;
@@ -92,16 +104,8 @@ public class EraseController {
         return true;
     }
 
-    public ArrayList<Path> getPathArray() {
-        return paths;
-    }
-
-    public Paint getPathPaint() {
-        return pathPaint;
-    }
-
-    public interface OnSaveEraseResultListener {
-        void saveEraseResult();
+    public interface EraseStateChangeListener{
+        void eraseStateChanged(ArrayList<Pair<Path, Integer>> paths);
     }
 
 }
