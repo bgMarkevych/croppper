@@ -50,14 +50,14 @@
         app:layout_constraintTop_toBottomOf="@+id/editView" />
 
     <ImageView
-    android:id="@+id/temp"
-    android:layout_width="200dp"
-    android:layout_height="200dp"
-    android:layout_marginStart="8dp"
-    android:layout_marginEnd="8dp"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@+id/contrast" />
+        android:id="@+id/temp"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/apply_crop" />
 
 
     <SeekBar
@@ -131,6 +131,27 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="@+id/vertical"
         app:layout_constraintTop_toBottomOf="@+id/vertical" />
+
+    <Button
+        android:id="@+id/reundo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="reundo"
+        app:layout_constraintEnd_toEndOf="@+id/horizontal"
+        app:layout_constraintStart_toStartOf="@+id/horizontal"
+        app:layout_constraintTop_toBottomOf="@+id/vertical" />
+
+    <Button
+        android:id="@+id/apply_crop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="apply crop"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/undo" />
 
     <!--<Button-->
     <!--android:id="@+id/save"-->

@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
         PhotoEditor editPhotoView = findViewById(R.id.editView);
         final Bitmap finalBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.image);
         editPhotoView.setOriginBitmap(finalBitmap);
-        editPhotoView.setEraseMode(true);
+//        editPhotoView.setEraseMode(true);
 
         SeekBar seekBrightness = findViewById(R.id.brightness);
         SeekBar seekContrast = findViewById(R.id.contrast);
@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-                editPhotoView.saveBitmapState(seekBrightness.getProgress(), seekContrast.getProgress());
+                editPhotoView.saveAdjustBitmapState(seekBrightness.getProgress(), seekContrast.getProgress());
             }
 
             @Override
@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-                editPhotoView.saveBitmapState(seekBrightness.getProgress(), seekContrast.getProgress());
+                editPhotoView.saveAdjustBitmapState(seekBrightness.getProgress(), seekContrast.getProgress());
             }
 
             @Override
@@ -83,15 +83,11 @@ public class MainActivity extends AppCompatActivity {
 //                editPhotoView.enableEraseMode();
 //            }
 //        });
-//        Button crop = findViewById(R.id.crop);
+        Button crop = findViewById(R.id.crop);
 //        Button getImage = findViewById(R.id.get_image);
-//        crop.setOnClickListener(v -> {
-//            if (editPhotoView.isCroppingMode()){
-//                editPhotoView.disableCropMode();
-//            } else {
-//                editPhotoView.enableCropMode();
-//            }
-//        });
+        crop.setOnClickListener(v -> {
+            editPhotoView.setCroppingMode(!editPhotoView.isCropModeEnabled());
+        });
         Button getImage = findViewById(R.id.get_image);
         ImageView imageView = findViewById(R.id.temp);
         getImage.setOnClickListener(v -> {
@@ -115,5 +111,9 @@ public class MainActivity extends AppCompatActivity {
         });
         Button undo = findViewById(R.id.undo);
         undo.setOnClickListener(v -> editPhotoView.undo());
+        Button reundo = findViewById(R.id.reundo);
+        reundo.setOnClickListener(v -> editPhotoView.reundo());
+        Button applyCrop = findViewById(R.id.apply_crop);
+        applyCrop.setOnClickListener(v -> editPhotoView.applyCrop());
     }
 }

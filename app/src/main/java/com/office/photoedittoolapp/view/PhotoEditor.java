@@ -8,11 +8,11 @@ import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Path;
+import android.graphics.PointF;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -22,11 +22,13 @@ import androidx.annotation.Nullable;
 import com.office.photoedittoolapp.tools.BitmapState;
 import com.office.photoedittoolapp.tools.CropController;
 import com.office.photoedittoolapp.tools.EraseController;
+import com.office.photoedittoolapp.tools.EraseDrawContainer;
+import com.office.photoedittoolapp.tools.OperationController;
 import com.office.photoedittoolapp.tools.ScaleAndRotationController;
 
 import java.util.ArrayList;
 
-public class PhotoEditor extends View implements EraseController.EraseStateChangeListener {
+public class PhotoEditor extends View implements EraseController.EraseStateChangeListener, OperationController.OperationCallback {
 
     private static final String TAG = PhotoEditor.class.getSimpleName();
 
@@ -45,26 +47,27 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         init();
     }
 
+
+    private BitmapState currentState;
     private Bitmap originBitmap;
     private Bitmap scaledBitmap;
     private Bitmap tempBitmap;
     private ScaleAndRotationController scaleAndRotationController;
     private CropController cropController;
     private EraseController eraseController;
+    private OperationController operationController;
     private AdjustUndoReundoListener adjustUndoReundoListener;
-    private ArrayList<BitmapState> states = new ArrayList<>();
-    private BitmapState currentState;
 
     private Paint adjustPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private RectF bitmapDst = new RectF();
+    private Rect bitmapSrc;
     private Matrix matrix = new Matrix();
     private Matrix zeroMatrix = new Matrix();
     private ColorMatrix colorMatrix = new ColorMatrix();
     private ColorMatrixColorFilter colorMatrixColorFilter;
 
-    private boolean isEraseMode;
+    private boolean isEraseMode = true;
     private boolean isCroppingMode;
-    private float sidesAspect;
 
     public void setOriginBitmap(Bitmap bitmap) {
         this.originBitmap = bitmap;
@@ -75,8 +78,6 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
                 @Override
                 public void onGlobalLayout() {
                     getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                    Log.d(TAG, "init: " + getMeasuredHeight() + " " + getMeasuredWidth());
-                    Log.d(TAG, "init: " + getHeight() + " " + getWidth());
                     scaleAndRotationController.setParentSize(getHeight(), getWidth());
                     cropController.setParentSize(getHeight(), getWidth());
                     tempBitmap = scaledBitmap = Bitmap.createScaledBitmap(originBitmap, getWidth(), getHeight(), true);
@@ -92,9 +93,9 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
     private void init() {
         scaleAndRotationController = new ScaleAndRotationController();
         cropController = new CropController();
-        eraseController = new EraseController();
-        eraseController.setEraseStateChangeListener(this);
-        currentState = new BitmapState();
+        eraseController = new EraseController(this);
+        operationController = new OperationController(this);
+        currentState = operationController.getCurrentState();
     }
 
     @Override
@@ -102,30 +103,28 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         canvas.save();
         bitmapDst.right = getWidth();
         bitmapDst.bottom = getHeight();
-        sidesAspect = (float) originBitmap.getHeight() / getHeight();
         canvas.setMatrix(matrix);
         canvas.rotate(currentState.getRotate(), getWidth() / 2f, getHeight() / 2f);
         if (colorMatrixColorFilter != null) {
             adjustPaint.setColorFilter(colorMatrixColorFilter);
         }
+        canvas.save();
+        canvas.scale(!currentState.isFlipHorizontal ? 1 : -1, !currentState.isFlipVertical ? 1 : -1, getWidth() / 2f, getHeight() / 2f);
+        canvas.scale(currentState.scales[0], currentState.scales[1], getWidth() / 2f, getHeight() / 2f);
         canvas.drawBitmap(tempBitmap, null, bitmapDst, adjustPaint);
+        eraseController.onDraw(canvas, currentState, getWidth(), getHeight());
+        canvas.save();
+        canvas.restore();
         if (isCroppingMode) {
             canvas.setMatrix(zeroMatrix);
             cropController.onDraw(canvas);
-        }
-        if (isEraseMode) {
-            eraseController.onDraw(canvas, currentState, getWidth(), getHeight());
         }
         canvas.restore();
     }
 
     public void setCroppingMode(boolean croppingMode) {
         isCroppingMode = croppingMode;
-        invalidate();
-    }
-
-    public void setEraseMode(boolean eraseMode) {
-        isEraseMode = eraseMode;
+        isEraseMode = !croppingMode;
         invalidate();
     }
 
@@ -136,32 +135,32 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);
-        if (originBitmap != null) {
+        if (tempBitmap != null) {
             if (heightSize == 0) {
-                heightSize = originBitmap.getHeight();
+                heightSize = tempBitmap.getHeight();
             }
             int desiredWidth;
             int desiredHeight;
             double viewToBitmapWidthRatio = Double.POSITIVE_INFINITY;
             double viewToBitmapHeightRatio = Double.POSITIVE_INFINITY;
-            if (widthSize < originBitmap.getWidth()) {
-                viewToBitmapWidthRatio = (double) widthSize / (double) originBitmap.getWidth();
+            if (widthSize < tempBitmap.getWidth()) {
+                viewToBitmapWidthRatio = (double) widthSize / (double) tempBitmap.getWidth();
             }
-            if (heightSize < originBitmap.getHeight()) {
-                viewToBitmapHeightRatio = (double) heightSize / (double) originBitmap.getHeight();
+            if (heightSize < tempBitmap.getHeight()) {
+                viewToBitmapHeightRatio = (double) heightSize / (double) tempBitmap.getHeight();
             }
             if (viewToBitmapWidthRatio != Double.POSITIVE_INFINITY
                     || viewToBitmapHeightRatio != Double.POSITIVE_INFINITY) {
                 if (viewToBitmapWidthRatio <= viewToBitmapHeightRatio) {
                     desiredWidth = widthSize;
-                    desiredHeight = (int) (originBitmap.getHeight() * viewToBitmapWidthRatio);
+                    desiredHeight = (int) (tempBitmap.getHeight() * viewToBitmapWidthRatio);
                 } else {
                     desiredHeight = heightSize;
-                    desiredWidth = (int) (originBitmap.getWidth() * viewToBitmapHeightRatio);
+                    desiredWidth = (int) (tempBitmap.getWidth() * viewToBitmapHeightRatio);
                 }
             } else {
-                desiredWidth = originBitmap.getWidth();
-                desiredHeight = originBitmap.getHeight();
+                desiredWidth = tempBitmap.getWidth();
+                desiredHeight = tempBitmap.getHeight();
             }
             int width = getOnMeasureSpec(widthMode, widthSize, desiredWidth);
             int height = getOnMeasureSpec(heightMode, heightSize, desiredHeight);
@@ -205,82 +204,53 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
      * @param contrast   must be in range 0 ... 1000
      **/
     public void changeAdjust(int brightness, float contrast) {
-        currentState.brightness = brightness - 255;
-        currentState.contrast = contrast / 100;
-        updateColorMatrix();
-        invalidate();
+        operationController.changeAdjust(brightness, contrast);
     }
 
-    public void saveBitmapState(int brightness, float contrast) {
-        states.add(currentState);
-        BitmapState bitmapState = new BitmapState(currentState);
-        bitmapState.brightness = brightness - 255;
-        bitmapState.contrast = contrast / 100;
-        currentState = bitmapState;
-    }
-
-    private void updateColorMatrix(){
-        float[] values = new float[]
-                {
-                        currentState.contrast, 0, 0, 0, currentState.brightness,
-                        0, currentState.contrast, 0, 0, currentState.brightness,
-                        0, 0, currentState.contrast, 0, currentState.brightness,
-                        0, 0, 0, 1, 0
-                };
-        colorMatrix.set(values);
-        colorMatrixColorFilter = new ColorMatrixColorFilter(colorMatrix);
+    public void saveAdjustBitmapState(int brightness, float contrast) {
+        operationController.saveAdjustBitmapState(brightness, contrast);
     }
 
     public void rotateRight() {
-        BitmapState state = new BitmapState(currentState);
-        state.setRotate(-90);
-        states.add(currentState);
-        currentState = state;
-        invalidate();
+        operationController.rotateRight();
     }
 
     public void rotateLeft() {
-        BitmapState state = new BitmapState(currentState);
-        state.setRotate(90);
-        states.add(currentState);
-        currentState = state;
-        invalidate();
+        operationController.rotateLeft();
     }
 
     public void flipVertical() {
-        Matrix matrix = new Matrix();
-        states.add(currentState);
-        BitmapState state = new BitmapState(currentState);
-        matrix.preScale(1, -1, getWidth() / 2f, getHeight() / 2f);
-        state.flipMatrix = matrix;
-        currentState = state;
-        tempBitmap = Bitmap.createBitmap(tempBitmap, 0, 0, tempBitmap.getWidth(), tempBitmap.getHeight(), matrix, true);
-        invalidate();
+        operationController.flipVertical();
     }
 
     public void flipHorizontal() {
-        Matrix matrix = new Matrix();
-        BitmapState state = new BitmapState(currentState);
-        states.add(currentState);
-        matrix.preScale(-1, 1, getWidth() / 2f, getHeight() / 2f);
-        state.flipMatrix = matrix;
-        currentState = state;
-        tempBitmap = Bitmap.createBitmap(tempBitmap, 0, 0, tempBitmap.getWidth(), tempBitmap.getHeight(), matrix, true);
-        invalidate();
+        operationController.flipHorizontal();
     }
 
-
     public void undo() {
-        if (states.size() != 0) {
-            currentState = states.remove(states.size() - 1);
-            eraseController.setPaths(currentState.getPaths());
-//            tempBitmap = Bitmap.createBitmap(tempBitmap, 0, 0, tempBitmap.getWidth(), tempBitmap.getHeight(), currentState.flipMatrix, true);
-            updateColorMatrix();
-            if (adjustUndoReundoListener != null){
-                adjustUndoReundoListener.undo(currentState.brightness, currentState.contrast);
-            }
-        }
-        invalidate();
+        operationController.undo();
+    }
+
+    public void reundo() {
+        operationController.reundo();
+    }
+
+    public void applyCrop() {
+        RectF crop = cropController.getCropShapeRect();
+        PointF pointF = scaleAndRotationController.getScaledImageCoordinates();
+        float[] scales = scaleAndRotationController.getScaleFactor();
+        bitmapSrc = new Rect();
+        float scaledLeft = pointF.x / scales[0];
+        float scaledTop = pointF.y / scales[1];
+        float scaledRight = (pointF.x + getWidth()) / scales[0];
+        float scaledBottom = (pointF.y + getHeight()) / scales[1];
+        bitmapSrc.left = (int) scaledLeft;
+        bitmapSrc.top = (int) scaledTop;
+        bitmapSrc.right = (int) scaledRight;
+        bitmapSrc.bottom = (int) scaledBottom;
+        operationController.applyCrop(scaleAndRotationController.getScaleFactor(), crop, bitmapSrc);
+        matrix = new Matrix();
+        scaleAndRotationController.dropToDefault(getHeight(), getWidth());
     }
 
     public Bitmap getImage() {
@@ -291,12 +261,57 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
     }
 
     @Override
-    public void eraseStateChanged(ArrayList<Pair<Path, Integer>> paths) {
-        BitmapState state = new BitmapState(currentState);
-        state.setPaths(paths);
-        states.add(currentState);
+    public void eraseStateChanged(ArrayList<EraseDrawContainer> paths) {
+        operationController.eraseStateChanged(paths);
+    }
+
+    @Override
+    public boolean isCropModeEnabled() {
+        return isCroppingMode;
+    }
+
+    @Override
+    public void onOperationDone(BitmapState state, boolean isUndo, boolean isReundo) {
+//        if (isUndo || isReundo) {
+//            if (state.dstPoint != null && state.cropShape != null) {
+//                Bitmap bitmap = Bitmap.createBitmap(scaledBitmap, (int) (state.dstPoint.x / state.scales[0]), (int) (state.dstPoint.y / state.scales[1]),
+//                        (int) (getWidth() / state.scales[0]), (int) (getHeight() / state.scales[1]));
+//                Bitmap bitmap2 = Bitmap.createBitmap(bitmap, (int) (state.cropShape.left / state.scales[0]), (int) (state.cropShape.top / state.scales[1]),
+//                        (int) ((state.cropShape.right - state.cropShape.left)/ state.scales[0]), (int) ((state.cropShape.bottom - state.cropShape.top) / state.scales[1]));
+//                tempBitmap = bitmap;
+//            } else {
+//                tempBitmap = scaledBitmap;
+//            }
+//        }
         currentState = state;
+        bitmapSrc = state.src;
+        if (bitmapDst.bottom == 0 || bitmapDst.right == 0) {
+            bitmapDst.bottom = getHeight();
+            bitmapDst.right = getWidth();
+        }
+        eraseController.setPaths(currentState.getPaths());
+        updateColorMatrix();
+        if (adjustUndoReundoListener != null) {
+            if (isUndo) {
+                adjustUndoReundoListener.undo(currentState.brightness, currentState.contrast);
+            }
+            if (isReundo) {
+                adjustUndoReundoListener.reundo(currentState.brightness, currentState.contrast);
+            }
+        }
         invalidate();
+    }
+
+    private void updateColorMatrix() {
+        float[] values = new float[]
+                {
+                        currentState.contrast, 0, 0, 0, currentState.brightness,
+                        0, currentState.contrast, 0, 0, currentState.brightness,
+                        0, 0, currentState.contrast, 0, currentState.brightness,
+                        0, 0, 0, 1, 0
+                };
+        colorMatrix.set(values);
+        colorMatrixColorFilter = new ColorMatrixColorFilter(colorMatrix);
     }
 
     public interface AdjustUndoReundoListener {

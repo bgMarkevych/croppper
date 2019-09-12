@@ -38,10 +38,17 @@ public class ScaleAndRotationController {
         dst.right = bitmapWidth;
         scaleHeight = bitmapHeight;
         scaleWidth = bitmapWidth;
+        mid.x = bitmapWidth/2f;
+        mid.y = bitmapHeight/2f;
     }
 
-    public void setMatrix(Matrix matrix) {
-        this.matrix = matrix;
+    public void dropToDefault(int bitmapHeight, int bitmapWidth) {
+        matrix = new Matrix();
+        savedMatrix = new Matrix();
+        values = new float[9];
+        dst = new RectF();
+        dst.bottom = bitmapHeight;
+        dst.right = bitmapWidth;
     }
 
     public Matrix onTouchEvent(MotionEvent event, boolean cropFlag, boolean eraseFlag) {
@@ -191,40 +198,16 @@ public class ScaleAndRotationController {
         return scales;
     }
 
-    private void rotateImage(int degrees) {
-        matrix.set(savedMatrix);
-        matrix.postRotate(degrees, src.right/2, src.bottom/2);
-        savedMatrix.set(matrix);
-    }
-
-    public Matrix rotateRight() {
-        rotateImage(90);
-        return matrix;
-    }
-
-    public Matrix rotateLeft() {
-        rotateImage(-90);
-        return matrix;
-    }
-
-    private void flipImage(float sx, float sy) {
-        matrix.set(savedMatrix);
-        matrix.postScale(sx, sy, src.right/2, src.bottom/2);
-        savedMatrix.set(matrix);
-    }
-
-    public Matrix flipVertical() {
-        flipImage(1, -1);
-        return matrix;
-    }
-
-    public Matrix flipHorizontal() {
-        flipImage(-1, 1);
-        return matrix;
-    }
-
     public boolean isScaled() {
         float[] scales = getScaleFactor();
         return scales[0] > 0 && scales[1] > 0;
+    }
+
+    public Matrix getMatrix() {
+        return matrix;
+    }
+
+    public PointF getMid() {
+        return mid;
     }
 }

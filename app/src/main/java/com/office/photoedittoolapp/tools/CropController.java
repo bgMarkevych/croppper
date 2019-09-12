@@ -268,4 +268,11 @@ public class CropController {
         prevY = y;
     }
 
+    public int getCropShapeWidth() {
+        return cropShapeWidth;
+    }
+
+    public int getCropShapeHeight() {
+        return cropShapeHeight;
+    }
 }

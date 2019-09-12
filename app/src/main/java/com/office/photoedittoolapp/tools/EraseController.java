@@ -16,7 +16,8 @@ import java.util.ArrayList;
 public class EraseController {
     private static final String TAG = EraseController.class.getSimpleName();
 
-    public EraseController() {
+    public EraseController(EraseStateChangeListener eraseStateChangeListener) {
+        this.eraseStateChangeListener = eraseStateChangeListener;
         initEraseTools();
     }
 
@@ -24,16 +25,12 @@ public class EraseController {
     private Path path;
     private int strokeWidth = 10;
     private BitmapState state;
-    private ArrayList<Pair<Path, Integer>> paths;
+    private ArrayList<EraseDrawContainer> paths;
     private boolean isMultiTouch;
     private Rect canvasRect;
     private EraseStateChangeListener eraseStateChangeListener;
 
-    public void setEraseStateChangeListener(EraseStateChangeListener eraseStateChangeListener) {
-        this.eraseStateChangeListener = eraseStateChangeListener;
-    }
-
-    public void setPaths(ArrayList<Pair<Path, Integer>> paths) {
+    public void setPaths(ArrayList<EraseDrawContainer> paths) {
         this.paths.clear();
         this.paths.addAll(paths);
     }
@@ -60,15 +57,19 @@ public class EraseController {
         float cy = height / 2f;
         canvas.save();
         for (int i = 0; i < paths.size(); i++) {
-            int rotate = paths.get(i).second;
+            canvas.save();
+            int rotate = paths.get(i).rotate;
             canvas.rotate(-rotate, cx, cy);
-            canvas.drawPath(paths.get(i).first, pathPaint);
+            canvas.drawPath(paths.get(i).path, pathPaint);
             canvas.rotate(rotate, cx, cy);
         }
         canvas.restore();
     }
 
     public boolean onTouchEvent(MotionEvent event, Matrix matrix) {
+        if (eraseStateChangeListener.isCropModeEnabled()) {
+            return false;
+        }
         float[] values = new float[9];
         matrix.getValues(values);
         float X = event.getX() / values[Matrix.MSCALE_X] + canvasRect.left;
@@ -91,7 +92,7 @@ public class EraseController {
                 path.reset();
                 path.transform(matrix);
                 path.moveTo(X, Y);
-                paths.add(new Pair<>(path, state.getRotate()));
+                paths.add(new EraseDrawContainer(path, state.getRotate(), state.isFlipHorizontal, state.isFlipVertical));
                 return true;
             case MotionEvent.ACTION_UP:
                 path = new Path();
@@ -104,8 +105,10 @@ public class EraseController {
         return true;
     }
 
-    public interface EraseStateChangeListener{
-        void eraseStateChanged(ArrayList<Pair<Path, Integer>> paths);
+    public interface EraseStateChangeListener {
+        void eraseStateChanged(ArrayList<EraseDrawContainer> paths);
+
+        boolean isCropModeEnabled();
     }
 
 }
