@@ -2,10 +2,19 @@ package com.office.photoedittoolapp.tools;
 
 import android.graphics.Bitmap;
 import android.graphics.RectF;
+import android.os.Bundle;
+
+import com.office.photoedittoolapp.data.BitmapState;
+import com.office.photoedittoolapp.data.EraseDrawContainer;
+import com.office.photoedittoolapp.view.PhotoEditor;
 
 import java.util.ArrayList;
 
 public class OperationController {
+
+    private static final String STATES_KEY = "STATES_KEY";
+    private static final String UNDO_STATES_KEY = "UNDO_STATES_KEY";
+    private static final String CURRENT_STATE_KEY = "CURRENT_STATE_KEY";
 
     public OperationController(OperationCallback operationCallback) {
         this.operationCallback = operationCallback;
@@ -100,6 +109,19 @@ public class OperationController {
 
     public BitmapState getCurrentState() {
         return currentState;
+    }
+
+    public void onSaveInstanceState(PhotoEditor.MyState bundle){
+       bundle.currentState = currentState;
+       bundle.states = states;
+       bundle.undoStates = undoStates;
+    }
+
+    public void onRestoreInstanceState(PhotoEditor.MyState bundle){
+        currentState = bundle.currentState;
+        states = bundle.states;
+        undoStates = bundle.undoStates;
+        operationCallback.onBitmapStateChanged(currentState, false, false);
     }
 
     public interface OperationCallback{

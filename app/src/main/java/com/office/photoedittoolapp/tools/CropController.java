@@ -7,6 +7,7 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
+import android.util.Log;
 import android.view.MotionEvent;
 
 
@@ -74,6 +75,7 @@ public class CropController {
 
     public void onDraw(Canvas canvas) {
         canvas.save();
+        Log.d(TAG, "onDraw: " + canvas.getClipBounds().toShortString());
         cropShapeCanvas.save();
         cropShapeCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
         cropShapeCanvas.drawRect(0, 0, parentWidth, parentHeight, dimPaint);

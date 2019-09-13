@@ -1,6 +1,7 @@
 package com.office.photoedittoolapp.view;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -9,6 +10,8 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -17,10 +20,10 @@ import android.view.ViewTreeObserver;
 
 import androidx.annotation.Nullable;
 
-import com.office.photoedittoolapp.tools.BitmapState;
+import com.office.photoedittoolapp.data.BitmapState;
 import com.office.photoedittoolapp.tools.CropController;
 import com.office.photoedittoolapp.tools.EraseController;
-import com.office.photoedittoolapp.tools.EraseDrawContainer;
+import com.office.photoedittoolapp.data.EraseDrawContainer;
 import com.office.photoedittoolapp.tools.OperationController;
 import com.office.photoedittoolapp.tools.ScaleAndRotationController;
 
@@ -86,6 +89,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
     }
 
     private void init() {
+        Log.d(TAG, "init: ");
         scaleAndRotationController = new ScaleAndRotationController();
         cropController = new CropController();
         eraseController = new EraseController(this);
@@ -95,9 +99,8 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
 
     @Override
     protected void onDraw(Canvas canvas) {
+        Log.d(TAG, "onDraw: ");
         canvas.save();
-        bitmapDst.right = getWidth();
-        bitmapDst.bottom = getHeight();
         canvas.setMatrix(matrix);
         canvas.rotate(currentState.getRotate(), getWidth() / 2f, getHeight() / 2f);
         if (colorMatrixColorFilter != null) {
@@ -156,12 +159,12 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
                 desiredWidth = tempBitmap.getWidth();
                 desiredHeight = tempBitmap.getHeight();
             }
-            int width = getOnMeasureSpec(widthMode, widthSize, desiredWidth);
-            int height = getOnMeasureSpec(heightMode, heightSize, desiredHeight);
-            setMeasuredDimension(width, height);
-        } else {
-            setMeasuredDimension(widthSize, heightSize);
+            widthSize = getOnMeasureSpec(widthMode, widthSize, desiredWidth);
+            heightSize = getOnMeasureSpec(heightMode, heightSize, desiredHeight);
         }
+        bitmapDst.right = widthSize;
+        bitmapDst.bottom = heightSize;
+        setMeasuredDimension(widthSize, heightSize);
     }
 
     private int getOnMeasureSpec(int measureSpecMode, int measureSpecSize, int desiredSize) {
@@ -247,7 +250,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
     private Bitmap getImage(boolean isCrop) {
         Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
-        if (isCrop){
+        if (isCrop) {
             int brightness = currentState.brightness;
             float contrast = currentState.contrast;
             currentState.brightness = 0;
@@ -265,7 +268,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         return bitmap;
     }
 
-    public Bitmap getImage(){
+    public Bitmap getImage() {
         return getImage(false);
     }
 
@@ -306,6 +309,94 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
                 };
         colorMatrix.set(values);
         colorMatrixColorFilter = new ColorMatrixColorFilter(colorMatrix);
+    }
+
+    @Nullable
+    @Override
+    protected Parcelable onSaveInstanceState() {
+        MyState myState = new MyState(super.onSaveInstanceState());
+        operationController.onSaveInstanceState(myState);
+        float[] values = new float[9];
+        matrix.getValues(values);
+        myState.values = values;
+        myState.isCroppingMode = isCroppingMode;
+        Log.d(TAG, "onSaveInstanceState: ");
+        return myState;
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Parcelable state) {
+        if (!(state instanceof MyState)) {
+            super.onRestoreInstanceState(state);
+            return;
+        }
+        MyState myState = ((MyState) state);
+        super.onRestoreInstanceState(myState.getSuperState());
+        operationController.onRestoreInstanceState(myState);
+        matrix.setValues(myState.values);
+        scaleAndRotationController.setMatrix(matrix);
+        isCroppingMode = myState.isCroppingMode;
+        invalidate();
+        Log.d(TAG, "onRestoreInstanceState: ");
+    }
+
+    public static class MyState extends BaseSavedState {
+
+        public ArrayList<BitmapState> states;
+        public ArrayList<BitmapState> undoStates;
+        public BitmapState currentState;
+        public boolean isCroppingMode;
+        public float[] values;
+
+        public MyState(Parcelable superState) {
+            super(superState);
+        }
+
+        @TargetApi(24)
+        public MyState(Parcel source, ClassLoader loader) {
+            super(source, loader);
+            states = new ArrayList<>();
+            source.readList(states, BitmapState.class.getClassLoader());
+            undoStates = new ArrayList<>();
+            source.readList(undoStates, BitmapState.class.getClassLoader());
+            currentState = source.readParcelable(BitmapState.class.getClassLoader());
+            isCroppingMode = source.readInt() == 1;
+            values = new float[9];
+            source.readFloatArray(values);
+        }
+
+        public MyState(Parcel source) {
+            super(source);
+            states = new ArrayList<>();
+            source.readList(states, BitmapState.class.getClassLoader());
+            undoStates = new ArrayList<>();
+            source.readList(undoStates, BitmapState.class.getClassLoader());
+            currentState = source.readParcelable(BitmapState.class.getClassLoader());
+            isCroppingMode = source.readInt() == 1;
+            values = new float[9];
+            source.readFloatArray(values);
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            super.writeToParcel(dest, flags);
+            dest.writeList(states);
+            dest.writeList(undoStates);
+            dest.writeParcelable(currentState, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
+            dest.writeInt(isCroppingMode ? 1 : 0);
+            dest.writeFloatArray(values);
+        }
+
+        public static final Parcelable.Creator<MyState> CREATOR =
+                new Parcelable.Creator<MyState>() {
+                    public MyState createFromParcel(Parcel in) {
+                        return new MyState(in);
+                    }
+
+                    public MyState[] newArray(int size) {
+                        return new MyState[size];
+                    }
+                };
     }
 
     public interface AdjustUndoReundoListener {

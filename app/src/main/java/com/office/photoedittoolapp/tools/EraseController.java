@@ -8,8 +8,12 @@ import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
-import android.util.Pair;
+import android.os.Bundle;
 import android.view.MotionEvent;
+
+import com.office.photoedittoolapp.data.BitmapState;
+import com.office.photoedittoolapp.data.EraseDrawContainer;
+import com.office.photoedittoolapp.data.PathS;
 
 import java.util.ArrayList;
 
@@ -22,7 +26,7 @@ public class EraseController {
     }
 
     private Paint pathPaint;
-    private Path path;
+    private PathS path;
     private int strokeWidth = 10;
     private BitmapState state;
     private ArrayList<EraseDrawContainer> paths;
@@ -46,7 +50,7 @@ public class EraseController {
         pathPaint.setColor(Color.TRANSPARENT);
         pathPaint.setStrokeJoin(Paint.Join.ROUND);
         pathPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        path = new Path();
+        path = new PathS();
         paths = new ArrayList<>();
     }
 
@@ -95,7 +99,7 @@ public class EraseController {
                 paths.add(new EraseDrawContainer(path, state.getRotate()));
                 return true;
             case MotionEvent.ACTION_UP:
-                path = new Path();
+                path = new PathS();
                 eraseStateChangeListener.eraseStateChanged(paths);
                 break;
             default:
