@@ -42,13 +42,9 @@ public class ScaleAndRotationController {
         mid.y = bitmapHeight/2f;
     }
 
-    public void dropToDefault(int bitmapHeight, int bitmapWidth) {
+    public void dropToDefault() {
         matrix = new Matrix();
         savedMatrix = new Matrix();
-        values = new float[9];
-        dst = new RectF();
-        dst.bottom = bitmapHeight;
-        dst.right = bitmapWidth;
     }
 
     public Matrix onTouchEvent(MotionEvent event, boolean cropFlag, boolean eraseFlag) {
@@ -119,8 +115,10 @@ public class ScaleAndRotationController {
             double newDist = spacing(event);
             if (newDist > 10f) {
                 float scale = (float) (newDist / oldDist);
+                Log.d(TAG, "onScale: " + scale);
                 matrix.set(savedMatrix);
                 matrix.postScale(scale, scale, mid.x, mid.y);
+                Log.d(TAG, "onScale: from matrix x " + getScaleFactorFromMatrix()[0] + " y " + getScaleFactorFromMatrix()[1]);
                 correctScaleCoordinates();
             }
         }
@@ -191,7 +189,7 @@ public class ScaleAndRotationController {
         return pointF;
     }
 
-    public float[] getScaleFactor() {
+    public float[] getScaleFactorFromMatrix() {
         float[] scales = new float[2];
         scales[0] = values[Matrix.MSCALE_X];
         scales[1] = values[Matrix.MSCALE_Y];
@@ -199,7 +197,7 @@ public class ScaleAndRotationController {
     }
 
     public boolean isScaled() {
-        float[] scales = getScaleFactor();
+        float[] scales = getScaleFactorFromMatrix();
         return scales[0] > 0 && scales[1] > 0;
     }
 

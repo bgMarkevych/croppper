@@ -8,8 +8,6 @@ import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.PointF;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -60,7 +58,6 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
 
     private Paint adjustPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private RectF bitmapDst = new RectF();
-    private Rect bitmapSrc;
     private Matrix matrix = new Matrix();
     private Matrix zeroMatrix = new Matrix();
     private ColorMatrix colorMatrix = new ColorMatrix();
@@ -110,7 +107,6 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         }
         canvas.save();
         canvas.scale(!currentState.isFlipHorizontal ? 1 : -1, !currentState.isFlipVertical ? 1 : -1, getWidth() / 2f, getHeight() / 2f);
-        canvas.scale(currentState.scales[0], currentState.scales[1], getWidth() / 2f, getHeight() / 2f);
         canvas.drawBitmap(tempBitmap, null, bitmapDst, adjustPaint);
         eraseController.onDraw(canvas, currentState, getWidth(), getHeight());
         canvas.save();
@@ -236,21 +232,19 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
     }
 
     public void applyCrop() {
+        if (!isCroppingMode) {
+            return;
+        }
+        isCroppingMode = false;
+        invalidate();
+        Bitmap bitmap = getImage();
+        isCroppingMode = true;
+        invalidate();
         RectF crop = cropController.getCropShapeRect();
-        PointF pointF = scaleAndRotationController.getScaledImageCoordinates();
-        float[] scales = scaleAndRotationController.getScaleFactor();
-        bitmapSrc = new Rect();
-        float scaledLeft = pointF.x / scales[0];
-        float scaledTop = pointF.y / scales[1];
-        float scaledRight = (pointF.x + getWidth()) / scales[0];
-        float scaledBottom = (pointF.y + getHeight()) / scales[1];
-        bitmapSrc.left = (int) scaledLeft;
-        bitmapSrc.top = (int) scaledTop;
-        bitmapSrc.right = (int) scaledRight;
-        bitmapSrc.bottom = (int) scaledBottom;
-        operationController.applyCrop(scaleAndRotationController.getScaleFactor(), crop, bitmapSrc);
+        tempBitmap = Bitmap.createBitmap(bitmap, (int) crop.left, (int) crop.top, (int) (crop.right - crop.left), (int) (crop.bottom - crop.top));
         matrix = new Matrix();
-        scaleAndRotationController.dropToDefault(getHeight(), getWidth());
+        scaleAndRotationController.dropToDefault();
+        operationController.applyCrop(crop, tempBitmap);
     }
 
     public Bitmap getImage() {
@@ -272,23 +266,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
 
     @Override
     public void onOperationDone(BitmapState state, boolean isUndo, boolean isReundo) {
-//        if (isUndo || isReundo) {
-//            if (state.dstPoint != null && state.cropShape != null) {
-//                Bitmap bitmap = Bitmap.createBitmap(scaledBitmap, (int) (state.dstPoint.x / state.scales[0]), (int) (state.dstPoint.y / state.scales[1]),
-//                        (int) (getWidth() / state.scales[0]), (int) (getHeight() / state.scales[1]));
-//                Bitmap bitmap2 = Bitmap.createBitmap(bitmap, (int) (state.cropShape.left / state.scales[0]), (int) (state.cropShape.top / state.scales[1]),
-//                        (int) ((state.cropShape.right - state.cropShape.left)/ state.scales[0]), (int) ((state.cropShape.bottom - state.cropShape.top) / state.scales[1]));
-//                tempBitmap = bitmap;
-//            } else {
-//                tempBitmap = scaledBitmap;
-//            }
-//        }
         currentState = state;
-        bitmapSrc = state.src;
-        if (bitmapDst.bottom == 0 || bitmapDst.right == 0) {
-            bitmapDst.bottom = getHeight();
-            bitmapDst.right = getWidth();
-        }
         eraseController.setPaths(currentState.getPaths());
         updateColorMatrix();
         if (adjustUndoReundoListener != null) {
@@ -299,6 +277,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
                 adjustUndoReundoListener.reundo(currentState.brightness, currentState.contrast);
             }
         }
+        tempBitmap = state.croppedBitmap == null ? scaledBitmap : state.croppedBitmap;
         invalidate();
     }
 

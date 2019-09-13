@@ -1,7 +1,6 @@
 package com.office.photoedittoolapp.tools;
 
-import android.graphics.PointF;
-import android.graphics.Rect;
+import android.graphics.Bitmap;
 import android.graphics.RectF;
 
 import java.util.ArrayList;
@@ -84,17 +83,17 @@ public class OperationController {
     public void reundo(){
         if (undoStates.size() != 0){
             states.add(currentState);
-            currentState = undoStates.remove(states.size() - 1);
+            currentState = undoStates.remove(undoStates.size() - 1);
         }
         operationCallback.onOperationDone(currentState, false, true);
     }
 
-    public void applyCrop(float[] scales, RectF crop, Rect src){
+    public void applyCrop(RectF crop, Bitmap bitmap){
         BitmapState state = new BitmapState(currentState);
         states.add(currentState);
-        state.scales = scales;
         state.cropShape = crop;
-        state.src = src;
+        state.croppedBitmap = bitmap;
+        state.clearPaths();
         currentState = state;
         operationCallback.onOperationDone(currentState, false, false);
     }

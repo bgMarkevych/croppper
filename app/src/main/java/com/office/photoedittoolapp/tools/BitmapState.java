@@ -1,7 +1,6 @@
 package com.office.photoedittoolapp.tools;
 
-import android.graphics.PointF;
-import android.graphics.Rect;
+import android.graphics.Bitmap;
 import android.graphics.RectF;
 
 import java.util.ArrayList;
@@ -13,9 +12,8 @@ public class BitmapState {
     private int rotate = 0;
     public boolean isFlipVertical;
     public boolean isFlipHorizontal;
-    public float[] scales = new float[]{1, 1};
     public RectF cropShape;
-    public Rect src;
+    public Bitmap croppedBitmap;
 
     public BitmapState() {
     }
@@ -27,9 +25,8 @@ public class BitmapState {
         rotate = state.rotate;
         isFlipVertical = state.isFlipVertical;
         isFlipHorizontal = state.isFlipHorizontal;
-        scales = state.scales;
         cropShape = state.cropShape;
-        src = state.src;
+        croppedBitmap = state.croppedBitmap;
     }
 
     public void setRotate(int rotate) {
@@ -48,5 +45,8 @@ public class BitmapState {
     public void setPaths(ArrayList<EraseDrawContainer> paths) {
         this.paths.clear();
         this.paths.addAll(paths);
+    }
+    public void clearPaths() {
+        this.paths.clear();
     }
 }
