@@ -42,9 +42,10 @@ public class ScaleAndRotationController {
         mid.y = bitmapHeight/2f;
     }
 
-    public void dropToDefault() {
+    public Matrix dropToDefault() {
         matrix = new Matrix();
         savedMatrix = new Matrix();
+        return matrix;
     }
 
     public Matrix onTouchEvent(MotionEvent event, boolean cropFlag, boolean eraseFlag) {
@@ -201,11 +202,7 @@ public class ScaleAndRotationController {
         return scales[0] > 0 && scales[1] > 0;
     }
 
-    public Matrix getMatrix() {
-        return matrix;
-    }
-
-    public PointF getMid() {
-        return mid;
+    public void setMatrix(Matrix matrix) {
+        this.matrix = matrix;
     }
 }

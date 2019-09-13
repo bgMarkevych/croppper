@@ -48,7 +48,6 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
 
     private BitmapState currentState;
     private Bitmap originBitmap;
-    private Bitmap scaledBitmap;
     private Bitmap tempBitmap;
     private ScaleAndRotationController scaleAndRotationController;
     private CropController cropController;
@@ -77,7 +76,6 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
                     getViewTreeObserver().removeOnGlobalLayoutListener(this);
                     scaleAndRotationController.setParentSize(getHeight(), getWidth());
                     cropController.setParentSize(getHeight(), getWidth());
-                    tempBitmap = scaledBitmap = Bitmap.createScaledBitmap(originBitmap, getWidth(), getHeight(), true);
                 }
             });
         }
@@ -242,8 +240,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         invalidate();
         RectF crop = cropController.getCropShapeRect();
         tempBitmap = Bitmap.createBitmap(bitmap, (int) crop.left, (int) crop.top, (int) (crop.right - crop.left), (int) (crop.bottom - crop.top));
-        matrix = new Matrix();
-        scaleAndRotationController.dropToDefault();
+        matrix = scaleAndRotationController.dropToDefault();
         operationController.applyCrop(crop, tempBitmap);
     }
 
@@ -265,7 +262,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
     }
 
     @Override
-    public void onOperationDone(BitmapState state, boolean isUndo, boolean isReundo) {
+    public void onBitmapStateChanged(BitmapState state, boolean isUndo, boolean isReundo) {
         currentState = state;
         eraseController.setPaths(currentState.getPaths());
         updateColorMatrix();
@@ -277,7 +274,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
                 adjustUndoReundoListener.reundo(currentState.brightness, currentState.contrast);
             }
         }
-        tempBitmap = state.croppedBitmap == null ? scaledBitmap : state.croppedBitmap;
+        tempBitmap = state.croppedBitmap == null ? originBitmap : state.croppedBitmap;
         invalidate();
     }
 

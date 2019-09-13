@@ -92,7 +92,7 @@ public class EraseController {
                 path.reset();
                 path.transform(matrix);
                 path.moveTo(X, Y);
-                paths.add(new EraseDrawContainer(path, state.getRotate(), state.isFlipHorizontal, state.isFlipVertical));
+                paths.add(new EraseDrawContainer(path, state.getRotate()));
                 return true;
             case MotionEvent.ACTION_UP:
                 path = new Path();

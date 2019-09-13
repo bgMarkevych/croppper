@@ -19,7 +19,7 @@ public class OperationController {
     public void changeAdjust(int brightness, float contrast) {
         currentState.brightness = brightness - 255;
         currentState.contrast = contrast / 100;
-        operationCallback.onOperationDone(currentState, true, false );
+        operationCallback.onBitmapStateChanged(currentState, true, false );
     }
 
     public void saveAdjustBitmapState(int brightness, float contrast) {
@@ -28,7 +28,7 @@ public class OperationController {
         bitmapState.brightness = brightness - 255;
         bitmapState.contrast = contrast / 100;
         currentState = bitmapState;
-        operationCallback.onOperationDone(currentState, true, false );
+        operationCallback.onBitmapStateChanged(currentState, true, false );
     }
 
     public void rotateRight() {
@@ -36,7 +36,7 @@ public class OperationController {
         state.setRotate(-90);
         states.add(currentState);
         currentState = state;
-        operationCallback.onOperationDone(currentState, true, false );
+        operationCallback.onBitmapStateChanged(currentState, true, false );
     }
 
     public void rotateLeft() {
@@ -44,7 +44,7 @@ public class OperationController {
         state.setRotate(90);
         states.add(currentState);
         currentState = state;
-        operationCallback.onOperationDone(currentState, true, false );
+        operationCallback.onBitmapStateChanged(currentState, true, false );
     }
 
     public void flipVertical() {
@@ -52,7 +52,7 @@ public class OperationController {
         BitmapState state = new BitmapState(currentState);
         state.isFlipVertical = !currentState.isFlipVertical;
         currentState = state;
-        operationCallback.onOperationDone(currentState, true, false );
+        operationCallback.onBitmapStateChanged(currentState, true, false );
     }
 
     public void flipHorizontal() {
@@ -60,7 +60,7 @@ public class OperationController {
         BitmapState state = new BitmapState(currentState);
         state.isFlipHorizontal = !currentState.isFlipHorizontal;
         currentState = state;
-        operationCallback.onOperationDone(currentState, true, false );
+        operationCallback.onBitmapStateChanged(currentState, true, false );
     }
 
     public void eraseStateChanged(ArrayList<EraseDrawContainer> paths) {
@@ -68,7 +68,7 @@ public class OperationController {
         state.setPaths(paths);
         states.add(currentState);
         currentState = state;
-        operationCallback.onOperationDone(currentState, true, false );
+        operationCallback.onBitmapStateChanged(currentState, true, false );
     }
 
 
@@ -77,7 +77,7 @@ public class OperationController {
             undoStates.add(currentState);
             currentState = states.remove(states.size() - 1);
         }
-        operationCallback.onOperationDone(currentState, true, false);
+        operationCallback.onBitmapStateChanged(currentState, true, false);
     }
 
     public void reundo(){
@@ -85,7 +85,7 @@ public class OperationController {
             states.add(currentState);
             currentState = undoStates.remove(undoStates.size() - 1);
         }
-        operationCallback.onOperationDone(currentState, false, true);
+        operationCallback.onBitmapStateChanged(currentState, false, true);
     }
 
     public void applyCrop(RectF crop, Bitmap bitmap){
@@ -95,7 +95,7 @@ public class OperationController {
         state.croppedBitmap = bitmap;
         state.clearPaths();
         currentState = state;
-        operationCallback.onOperationDone(currentState, false, false);
+        operationCallback.onBitmapStateChanged(currentState, false, false);
     }
 
     public BitmapState getCurrentState() {
@@ -103,7 +103,7 @@ public class OperationController {
     }
 
     public interface OperationCallback{
-        void onOperationDone(BitmapState state, boolean isUndo, boolean isReundo);
+        void onBitmapStateChanged(BitmapState state, boolean isUndo, boolean isReundo);
     }
 
 }
