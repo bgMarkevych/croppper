@@ -235,7 +235,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         }
         isCroppingMode = false;
         invalidate();
-        Bitmap bitmap = getImage();
+        Bitmap bitmap = getImage(true);
         isCroppingMode = true;
         invalidate();
         RectF crop = cropController.getCropShapeRect();
@@ -244,11 +244,29 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         operationController.applyCrop(crop, tempBitmap);
     }
 
-    public Bitmap getImage() {
+    private Bitmap getImage(boolean isCrop) {
         Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
-        draw(canvas);
+        if (isCrop){
+            int brightness = currentState.brightness;
+            float contrast = currentState.contrast;
+            currentState.brightness = 0;
+            currentState.contrast = 1f;
+            updateColorMatrix();
+            invalidate();
+            draw(canvas);
+            currentState.brightness = brightness;
+            currentState.contrast = contrast;
+            updateColorMatrix();
+            invalidate();
+        } else {
+            draw(canvas);
+        }
         return bitmap;
+    }
+
+    public Bitmap getImage(){
+        return getImage(false);
     }
 
     @Override
