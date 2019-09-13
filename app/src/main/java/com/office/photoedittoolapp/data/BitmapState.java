@@ -59,6 +59,10 @@ public class BitmapState implements Parcelable {
         this.rotate = this.rotate == 360 || this.rotate == -360 ? 0 : this.rotate;
     }
 
+    public void dropRotate(){
+        rotate = 0;
+    }
+
     public int getRotate() {
         return rotate;
     }

@@ -94,7 +94,6 @@ public class EraseController {
                 break;
             case MotionEvent.ACTION_DOWN:
                 path.reset();
-                path.transform(matrix);
                 path.moveTo(X, Y);
                 paths.add(new EraseDrawContainer(path, state.getRotate()));
                 return true;

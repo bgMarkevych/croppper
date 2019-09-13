@@ -167,6 +167,12 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         setMeasuredDimension(widthSize, heightSize);
     }
 
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        scaleAndRotationController.setParentSize(getHeight(), getWidth());
+        cropController.setParentSize(getHeight(), getWidth());
+    }
+
     private int getOnMeasureSpec(int measureSpecMode, int measureSpecSize, int desiredSize) {
         int spec;
         if (measureSpecMode == MeasureSpec.EXACTLY) {
@@ -244,6 +250,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         RectF crop = cropController.getCropShapeRect();
         tempBitmap = Bitmap.createBitmap(bitmap, (int) crop.left, (int) crop.top, (int) (crop.right - crop.left), (int) (crop.bottom - crop.top));
         matrix = scaleAndRotationController.dropToDefault();
+        requestLayout();
         operationController.applyCrop(crop, tempBitmap);
     }
 
@@ -297,6 +304,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         }
         tempBitmap = state.croppedBitmap == null ? originBitmap : state.croppedBitmap;
         invalidate();
+        requestLayout();
     }
 
     private void updateColorMatrix() {

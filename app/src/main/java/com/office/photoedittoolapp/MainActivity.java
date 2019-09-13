@@ -20,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         PhotoEditor editPhotoView = findViewById(R.id.editView);
-        final Bitmap finalBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.image_3);
+        final Bitmap finalBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.image_2);
         editPhotoView.setOriginBitmap(finalBitmap);
 
         SeekBar seekBrightness = findViewById(R.id.brightness);

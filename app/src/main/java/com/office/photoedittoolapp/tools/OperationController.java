@@ -103,6 +103,7 @@ public class OperationController {
         state.cropShape = crop;
         state.croppedBitmap = bitmap;
         state.clearPaths();
+        state.dropRotate();
         currentState = state;
         operationCallback.onBitmapStateChanged(currentState, false, false);
     }
