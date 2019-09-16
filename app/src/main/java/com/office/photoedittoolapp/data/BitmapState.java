@@ -61,13 +61,13 @@ public class BitmapState implements Parcelable {
     }
 
     private void updatePathsRotations(int rotate) {
-        for (EraseDrawContainer drawContainer: paths){
+        for (EraseDrawContainer drawContainer : paths) {
             drawContainer.rotate += rotate;
             drawContainer.rotate = drawContainer.rotate == 360 || drawContainer.rotate == -360 ? 0 : drawContainer.rotate;
         }
     }
 
-    public void dropRotate(){
+    public void dropRotate() {
         rotate = 0;
     }
 
@@ -80,9 +80,14 @@ public class BitmapState implements Parcelable {
     }
 
     public void setPaths(ArrayList<EraseDrawContainer> paths) {
-        this.paths.clear();
-        this.paths.addAll(paths);
+        this.paths = new ArrayList<>();
+        for (EraseDrawContainer eraseDrawContainer : paths) {
+            EraseDrawContainer drawContainer = new EraseDrawContainer(eraseDrawContainer.path, eraseDrawContainer.rotate,
+                    eraseDrawContainer.strokeWidth, eraseDrawContainer.isFlipHorizontal, eraseDrawContainer.isFlipVertical);
+            this.paths.add(drawContainer);
+        }
     }
+
     public void clearPaths() {
         this.paths.clear();
     }

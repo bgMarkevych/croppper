@@ -37,8 +37,7 @@ public class EraseController {
     private EraseStateChangeListener eraseStateChangeListener;
 
     public void setPaths(ArrayList<EraseDrawContainer> paths) {
-        this.paths.clear();
-        this.paths.addAll(paths);
+        this.paths = new ArrayList<>(paths);
     }
 
     public void setStrokeWidth(int width) {
@@ -95,7 +94,7 @@ public class EraseController {
             case MotionEvent.ACTION_DOWN:
                 path.reset();
                 path.moveTo(X, Y);
-                paths.add(new EraseDrawContainer(path, 0));
+                paths.add(new EraseDrawContainer(path, 0, strokeWidth));
                 return true;
             case MotionEvent.ACTION_UP:
                 path = new PathS();

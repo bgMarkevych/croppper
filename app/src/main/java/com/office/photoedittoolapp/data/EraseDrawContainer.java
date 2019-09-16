@@ -6,19 +6,28 @@ import android.os.Parcelable;
 
 public class EraseDrawContainer implements Parcelable {
     public PathS path;
-    public Integer rotate;
+    public int rotate;
     public int strokeWidth;
     public boolean isFlipHorizontal;
     public boolean isFlipVertical;
 
-    public EraseDrawContainer(PathS path, Integer rotate) {
+    public EraseDrawContainer(PathS path, int rotate, int strokeWidth) {
         this.path = path;
         this.rotate = rotate;
+        this.strokeWidth = strokeWidth;
+    }
+
+    public EraseDrawContainer(PathS path, int rotate, int strokeWidth, boolean isFlipHorizontal, boolean isFlipVertical) {
+        this.path = path;
+        this.rotate = rotate;
+        this.strokeWidth = strokeWidth;
+        this.isFlipHorizontal = isFlipHorizontal;
+        this.isFlipVertical = isFlipVertical;
     }
 
     protected EraseDrawContainer(Parcel in) {
         if (in.readByte() == 0) {
-            rotate = null;
+            rotate = 0;
             path = null;
         } else {
             rotate = in.readInt();
@@ -47,15 +56,11 @@ public class EraseDrawContainer implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        if (rotate == null) {
-            dest.writeByte((byte) 0);
-        } else {
             dest.writeByte((byte) 1);
             dest.writeInt(rotate);
             dest.writeSerializable(path);
             dest.writeInt(strokeWidth);
             dest.writeInt(isFlipHorizontal ? 1 : 0);
             dest.writeInt(isFlipVertical ? 1 : 0);
-        }
     }
 }

@@ -41,17 +41,17 @@ public class OperationController {
     }
 
     public void rotateRight() {
+        states.add(currentState);
         BitmapState state = new BitmapState(currentState);
         state.setRotate(-90);
-        states.add(currentState);
         currentState = state;
         operationCallback.onBitmapStateChanged(currentState, true, false );
     }
 
     public void rotateLeft() {
+        states.add(currentState);
         BitmapState state = new BitmapState(currentState);
         state.setRotate(90);
-        states.add(currentState);
         currentState = state;
         operationCallback.onBitmapStateChanged(currentState, true, false );
     }

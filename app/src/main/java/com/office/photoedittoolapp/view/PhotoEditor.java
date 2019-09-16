@@ -291,7 +291,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
     @Override
     public void onBitmapStateChanged(BitmapState state, boolean isUndo, boolean isReundo) {
         currentState = state;
-        eraseController.setPaths(currentState.getPaths());
+        eraseController.setPaths(new ArrayList<>(currentState.getPaths()));
         updateColorMatrix();
         if (adjustUndoReundoListener != null) {
             if (isUndo) {
