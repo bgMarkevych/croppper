@@ -5,6 +5,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
@@ -16,6 +17,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 
 import androidx.annotation.Nullable;
@@ -101,6 +103,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
     protected void onDraw(Canvas canvas) {
         Log.d(TAG, "onDraw: ");
         canvas.save();
+        canvas.drawColor(Color.WHITE);
         canvas.setMatrix(matrix);
         canvas.save();
         canvas.rotate(currentState.getRotate(), getWidth() / 2f, getHeight() / 2f);
@@ -161,6 +164,8 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
             widthSize = getOnMeasureSpec(widthMode, widthSize, desiredWidth);
             heightSize = getOnMeasureSpec(heightMode, heightSize, desiredHeight);
         }
+        ViewGroup parent = (ViewGroup) getParent();
+        Log.d(TAG, "onMeasure: " + parent.getMeasuredHeight());
         bitmapDst.right = widthSize;
         bitmapDst.bottom = heightSize;
         setMeasuredDimension(widthSize, heightSize);

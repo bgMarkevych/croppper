@@ -47,9 +47,9 @@ public class EraseController {
         pathPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         pathPaint.setStrokeWidth(strokeWidth);
         pathPaint.setStyle(Paint.Style.STROKE);
-        pathPaint.setColor(Color.TRANSPARENT);
+        pathPaint.setColor(Color.WHITE);
         pathPaint.setStrokeJoin(Paint.Join.ROUND);
-        pathPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        pathPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
         path = new PathS();
         paths = new ArrayList<>();
     }
