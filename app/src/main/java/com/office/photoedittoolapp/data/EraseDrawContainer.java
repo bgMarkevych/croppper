@@ -7,6 +7,9 @@ import android.os.Parcelable;
 public class EraseDrawContainer implements Parcelable {
     public PathS path;
     public Integer rotate;
+    public int strokeWidth;
+    public boolean isFlipHorizontal;
+    public boolean isFlipVertical;
 
     public EraseDrawContainer(PathS path, Integer rotate) {
         this.path = path;
@@ -20,6 +23,8 @@ public class EraseDrawContainer implements Parcelable {
         } else {
             rotate = in.readInt();
             path = (PathS) in.readSerializable();
+            isFlipHorizontal = in.readInt() == 1;
+            isFlipVertical = in.readInt() == 1;
         }
     }
 
@@ -48,6 +53,9 @@ public class EraseDrawContainer implements Parcelable {
             dest.writeByte((byte) 1);
             dest.writeInt(rotate);
             dest.writeSerializable(path);
+            dest.writeInt(strokeWidth);
+            dest.writeInt(isFlipHorizontal ? 1 : 0);
+            dest.writeInt(isFlipVertical ? 1 : 0);
         }
     }
 }

@@ -17,6 +17,7 @@ import com.office.photoedittoolapp.data.EraseDrawContainer;
 import com.office.photoedittoolapp.data.PathS;
 
 import java.util.ArrayList;
+import java.util.Stack;
 
 public class EraseController {
     private static final String TAG = EraseController.class.getSimpleName();
@@ -58,16 +59,14 @@ public class EraseController {
     public void onDraw(Canvas canvas, BitmapState state, int width, int height) {
         this.state = state;
         canvasRect = canvas.getClipBounds();
-        Log.d(TAG, "onDraw: " + canvasRect.toShortString());
         float cx = width / 2f;
         float cy = height / 2f;
-        for (int i = 0; i < paths.size(); i++) {
+        for (int i = paths.size() - 1; i >= 0; i--) {
             canvas.save();
             int rotate = paths.get(i).rotate;
-            canvas.drawPath(paths.get(i).path, pathPaint);
             canvas.rotate(rotate, cx, cy);
+            canvas.drawPath(paths.get(i).path, pathPaint);
             canvas.restore();
-
         }
     }
 
@@ -96,7 +95,7 @@ public class EraseController {
             case MotionEvent.ACTION_DOWN:
                 path.reset();
                 path.moveTo(X, Y);
-                paths.add(new EraseDrawContainer(path, state.getRotate()));
+                paths.add(new EraseDrawContainer(path, 0));
                 return true;
             case MotionEvent.ACTION_UP:
                 path = new PathS();
