@@ -9,6 +9,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import com.office.photoedittoolapp.data.BitmapState;
@@ -57,17 +58,17 @@ public class EraseController {
     public void onDraw(Canvas canvas, BitmapState state, int width, int height) {
         this.state = state;
         canvasRect = canvas.getClipBounds();
+        Log.d(TAG, "onDraw: " + canvasRect.toShortString());
         float cx = width / 2f;
         float cy = height / 2f;
-        canvas.save();
         for (int i = 0; i < paths.size(); i++) {
             canvas.save();
             int rotate = paths.get(i).rotate;
-            canvas.rotate(-rotate, cx, cy);
             canvas.drawPath(paths.get(i).path, pathPaint);
             canvas.rotate(rotate, cx, cy);
+            canvas.restore();
+
         }
-        canvas.restore();
     }
 
     public boolean onTouchEvent(MotionEvent event, Matrix matrix) {

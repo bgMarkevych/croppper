@@ -102,13 +102,14 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         Log.d(TAG, "onDraw: ");
         canvas.save();
         canvas.setMatrix(matrix);
+        canvas.save();
         canvas.rotate(currentState.getRotate(), getWidth() / 2f, getHeight() / 2f);
         if (colorMatrixColorFilter != null) {
             adjustPaint.setColorFilter(colorMatrixColorFilter);
         }
-        canvas.save();
         canvas.scale(!currentState.isFlipHorizontal ? 1 : -1, !currentState.isFlipVertical ? 1 : -1, getWidth() / 2f, getHeight() / 2f);
         canvas.drawBitmap(tempBitmap, null, bitmapDst, adjustPaint);
+        canvas.restore();
         eraseController.onDraw(canvas, currentState, getWidth(), getHeight());
         canvas.save();
         canvas.restore();
