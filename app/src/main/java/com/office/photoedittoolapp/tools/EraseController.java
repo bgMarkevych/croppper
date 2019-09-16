@@ -30,7 +30,6 @@ public class EraseController {
     private Paint pathPaint;
     private PathS path;
     private int strokeWidth = 10;
-    private BitmapState state;
     private ArrayList<EraseDrawContainer> paths;
     private boolean isMultiTouch;
     private Rect canvasRect;
@@ -55,8 +54,7 @@ public class EraseController {
         paths = new ArrayList<>();
     }
 
-    public void onDraw(Canvas canvas, BitmapState state, int width, int height) {
-        this.state = state;
+    public void onDraw(Canvas canvas, int width, int height) {
         canvasRect = canvas.getClipBounds();
         float cx = width / 2f;
         float cy = height / 2f;
@@ -64,6 +62,7 @@ public class EraseController {
             canvas.save();
             int rotate = paths.get(i).rotate;
             canvas.rotate(rotate, cx, cy);
+            canvas.scale(!paths.get(i).isFlipHorizontal ? 1 : -1, !paths.get(i).isFlipVertical ? 1 : -1, width / 2f, height / 2f);
             canvas.drawPath(paths.get(i).path, pathPaint);
             canvas.restore();
         }

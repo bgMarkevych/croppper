@@ -12,8 +12,8 @@ public class BitmapState implements Parcelable {
     public int brightness = 0;
     public float contrast = 1f;
     private int rotate = 0;
-    public boolean isFlipVertical;
-    public boolean isFlipHorizontal;
+    private boolean isFlipVertical;
+    private boolean isFlipHorizontal;
     public RectF cropShape;
     public Bitmap croppedBitmap;
 
@@ -65,6 +65,36 @@ public class BitmapState implements Parcelable {
             drawContainer.rotate += rotate;
             drawContainer.rotate = drawContainer.rotate == 360 || drawContainer.rotate == -360 ? 0 : drawContainer.rotate;
         }
+    }
+
+    private void updatePathsFlipVertical() {
+        for (EraseDrawContainer drawContainer : paths) {
+            drawContainer.isFlipVertical = !drawContainer.isFlipVertical;
+        }
+    }
+
+    private void updatePathsFlipHorizontal() {
+        for (EraseDrawContainer drawContainer : paths) {
+            drawContainer.isFlipHorizontal = !drawContainer.isFlipHorizontal;
+        }
+    }
+
+    public boolean isFlipVertical() {
+        return isFlipVertical;
+    }
+
+    public void setFlipVertical(boolean flipVertical) {
+        isFlipVertical = flipVertical;
+        updatePathsFlipVertical();
+    }
+
+    public boolean isFlipHorizontal() {
+        return isFlipHorizontal;
+    }
+
+    public void setFlipHorizontal(boolean flipHorizontal) {
+        isFlipHorizontal = flipHorizontal;
+        updatePathsFlipHorizontal();
     }
 
     public void dropRotate() {

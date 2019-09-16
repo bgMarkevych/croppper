@@ -107,10 +107,10 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         if (colorMatrixColorFilter != null) {
             adjustPaint.setColorFilter(colorMatrixColorFilter);
         }
-        canvas.scale(!currentState.isFlipHorizontal ? 1 : -1, !currentState.isFlipVertical ? 1 : -1, getWidth() / 2f, getHeight() / 2f);
+        canvas.scale(!currentState.isFlipHorizontal() ? 1 : -1, !currentState.isFlipVertical() ? 1 : -1, getWidth() / 2f, getHeight() / 2f);
         canvas.drawBitmap(tempBitmap, null, bitmapDst, adjustPaint);
         canvas.restore();
-        eraseController.onDraw(canvas, currentState, getWidth(), getHeight());
+        eraseController.onDraw(canvas, getWidth(), getHeight());
         if (isCroppingMode) {
             canvas.setMatrix(zeroMatrix);
             cropController.onDraw(canvas);

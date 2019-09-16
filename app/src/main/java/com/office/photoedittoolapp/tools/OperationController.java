@@ -59,7 +59,7 @@ public class OperationController {
     public void flipVertical() {
         states.add(currentState);
         BitmapState state = new BitmapState(currentState);
-        state.isFlipVertical = !currentState.isFlipVertical;
+        state.setFlipVertical(!state.isFlipVertical());
         currentState = state;
         operationCallback.onBitmapStateChanged(currentState, true, false );
     }
@@ -67,7 +67,7 @@ public class OperationController {
     public void flipHorizontal() {
         states.add(currentState);
         BitmapState state = new BitmapState(currentState);
-        state.isFlipHorizontal = !currentState.isFlipHorizontal;
+        state.setFlipHorizontal(!state.isFlipHorizontal());
         currentState = state;
         operationCallback.onBitmapStateChanged(currentState, true, false );
     }
