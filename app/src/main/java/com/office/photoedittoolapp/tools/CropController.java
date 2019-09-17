@@ -25,18 +25,16 @@ public class CropController {
     private int minHeight;
     private int minWidth;
     private int resizeTouchPadding = 30;
-    private int resizeLineWidth;
-    private int resizeLineHeight;
+    private int cropRingSize = 50;
 
     private TouchType touchType;
 
-    private Paint dimPaint;
     private Paint cropShapePaint;
     private Paint cropShapeBorderPaint;
-    private Bitmap cropShapeBitmap;
-    private Canvas cropShapeCanvas;
+    private Paint cropShapeRingPaint;
     private RectF cropShapeRect;
-    private int borderColor = Color.parseColor("#359bf0");
+    private int borderColor = Color.parseColor("#248df6");
+    private int rectColor = Color.parseColor("#4c248df6");
 
     private boolean isMultiTouch;
 
@@ -49,44 +47,35 @@ public class CropController {
             cropShapeHeight = parentHeight - minHeight;
             cropShapeWidth = parentWidth - minWidth;
         }
-        resizeLineWidth = minWidth / 2;
-        resizeLineHeight = minHeight / 2;
         initCropPaintTools();
     }
 
-    public RectF getCropShapeRect(){
+    public RectF getCropShapeRect() {
         return cropShapeRect;
     }
 
     private void initCropPaintTools() {
-        dimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        dimPaint.setAlpha(150);
         cropShapePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         cropShapePaint.setStyle(Paint.Style.FILL);
-        cropShapePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        cropShapeBitmap = Bitmap.createBitmap(parentWidth, parentHeight, Bitmap.Config.ARGB_8888);
-        cropShapeCanvas = new Canvas(cropShapeBitmap);
+        cropShapePaint.setColor(rectColor);
         cropShapeRect = new RectF(parentWidth / 2f - cropShapeWidth / 2f, parentHeight / 2f - cropShapeHeight / 2f, parentWidth / 2f + cropShapeWidth / 2f, parentHeight / 2f + cropShapeHeight / 2f);
         cropShapeBorderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         cropShapeBorderPaint.setStyle(Paint.Style.STROKE);
         cropShapeBorderPaint.setColor(borderColor);
         cropShapeBorderPaint.setStrokeWidth(5);
+        cropShapeRingPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        cropShapeRingPaint.setColor(borderColor);
+        cropShapeRingPaint.setStyle(Paint.Style.FILL);
     }
 
     public void onDraw(Canvas canvas) {
         canvas.save();
-        Log.d(TAG, "onDraw: " + canvas.getClipBounds().toShortString());
-        cropShapeCanvas.save();
-        cropShapeCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-        cropShapeCanvas.drawRect(0, 0, parentWidth, parentHeight, dimPaint);
-        cropShapeCanvas.drawRect(cropShapeRect, cropShapePaint);
-        cropShapeCanvas.drawRect(cropShapeRect, cropShapeBorderPaint);
-        cropShapeCanvas.drawLine((cropShapeRect.left + cropShapeRect.right) / 2 - resizeLineWidth / 2f, cropShapeRect.top + resizeTouchPadding, (cropShapeRect.left + cropShapeRect.right) / 2 + resizeLineWidth / 2f, cropShapeRect.top + resizeTouchPadding, cropShapeBorderPaint);
-        cropShapeCanvas.drawLine((cropShapeRect.left + cropShapeRect.right) / 2 - resizeLineWidth / 2f, cropShapeRect.bottom - resizeTouchPadding, (cropShapeRect.left + cropShapeRect.right) / 2 + resizeLineWidth / 2f, cropShapeRect.bottom - resizeTouchPadding, cropShapeBorderPaint);
-        cropShapeCanvas.drawLine(cropShapeRect.left + resizeTouchPadding, (cropShapeRect.top + cropShapeRect.bottom) / 2 - resizeLineHeight / 2f, cropShapeRect.left + resizeTouchPadding, (cropShapeRect.top + cropShapeRect.bottom) / 2 + resizeLineHeight / 2f, cropShapeBorderPaint);
-        cropShapeCanvas.drawLine(cropShapeRect.right - resizeTouchPadding, (cropShapeRect.top + cropShapeRect.bottom) / 2 - resizeLineHeight / 2f, cropShapeRect.right - resizeTouchPadding, (cropShapeRect.top + cropShapeRect.bottom) / 2 + resizeLineHeight / 2f, cropShapeBorderPaint);
-        canvas.drawBitmap(cropShapeBitmap, 0, 0, null);
-        cropShapeCanvas.restore();
+        canvas.drawRect(cropShapeRect, cropShapePaint);
+        canvas.drawRect(cropShapeRect, cropShapeBorderPaint);
+        canvas.drawOval(cropShapeRect.left - cropRingSize / 2f, cropShapeRect.top - cropRingSize / 2f, cropShapeRect.left + cropRingSize / 2f, cropShapeRect.top + cropRingSize / 2f, cropShapeRingPaint);
+        canvas.drawOval(cropShapeRect.right + cropRingSize / 2f, cropShapeRect.top - cropRingSize / 2f, cropShapeRect.right - cropRingSize / 2f, cropShapeRect.top + cropRingSize / 2f, cropShapeRingPaint);
+        canvas.drawOval(cropShapeRect.right + cropRingSize / 2f, cropShapeRect.bottom - cropRingSize / 2f, cropShapeRect.right - cropRingSize / 2f, cropShapeRect.bottom + cropRingSize / 2f, cropShapeRingPaint);
+        canvas.drawOval(cropShapeRect.left - cropRingSize / 2f, cropShapeRect.bottom - cropRingSize / 2f, cropShapeRect.left + cropRingSize / 2f, cropShapeRect.bottom + cropRingSize / 2f, cropShapeRingPaint);
         canvas.restore();
     }
 
@@ -105,10 +94,10 @@ public class CropController {
                 onTouchDown(x, y);
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (isMultiTouch){
+                if (isMultiTouch) {
                     flag = false;
                 } else {
-                    if (touchType == null){
+                    if (touchType == null) {
                         flag = false;
                     } else {
                         onTouchMove(x, y);
