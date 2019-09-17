@@ -97,14 +97,13 @@ public class OperationController {
         operationCallback.onBitmapStateChanged(currentState, false, true);
     }
 
-    public void applyCrop(RectF crop, Bitmap bitmap){
+    public void applyCrop(){
         BitmapState state = new BitmapState(currentState);
-        states.add(currentState);
-        state.cropShape = crop;
-        state.croppedBitmap = bitmap;
         state.clearPaths();
         state.dropRotate();
         currentState = state;
+        states.clear();
+        undoStates.clear();
         operationCallback.onBitmapStateChanged(currentState, false, false);
     }
 

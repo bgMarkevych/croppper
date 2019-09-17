@@ -69,6 +69,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
 
     private boolean isEraseMode = true;
     private boolean isCroppingMode;
+    private boolean isImageCropped;
 
     public void setOriginBitmap(Bitmap bitmap) {
         this.originBitmap = bitmap;
@@ -134,41 +135,48 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);
-        if (tempBitmap != null) {
+        if (originBitmap != null) {
             if (heightSize == 0) {
-                heightSize = tempBitmap.getHeight();
+                heightSize = originBitmap.getHeight();
             }
             int desiredWidth;
             int desiredHeight;
             double viewToBitmapWidthRatio = Double.POSITIVE_INFINITY;
             double viewToBitmapHeightRatio = Double.POSITIVE_INFINITY;
-            if (widthSize < tempBitmap.getWidth()) {
-                viewToBitmapWidthRatio = (double) widthSize / (double) tempBitmap.getWidth();
+            if (widthSize < originBitmap.getWidth()) {
+                viewToBitmapWidthRatio = (double) widthSize / (double) originBitmap.getWidth();
             }
-            if (heightSize < tempBitmap.getHeight()) {
-                viewToBitmapHeightRatio = (double) heightSize / (double) tempBitmap.getHeight();
+            if (heightSize < originBitmap.getHeight()) {
+                viewToBitmapHeightRatio = (double) heightSize / (double) originBitmap.getHeight();
             }
             if (viewToBitmapWidthRatio != Double.POSITIVE_INFINITY
                     || viewToBitmapHeightRatio != Double.POSITIVE_INFINITY) {
                 if (viewToBitmapWidthRatio <= viewToBitmapHeightRatio) {
                     desiredWidth = widthSize;
-                    desiredHeight = (int) (tempBitmap.getHeight() * viewToBitmapWidthRatio);
+                    desiredHeight = (int) (originBitmap.getHeight() * viewToBitmapWidthRatio);
                 } else {
                     desiredHeight = heightSize;
-                    desiredWidth = (int) (tempBitmap.getWidth() * viewToBitmapHeightRatio);
+                    desiredWidth = (int) (originBitmap.getWidth() * viewToBitmapHeightRatio);
                 }
             } else {
-                desiredWidth = tempBitmap.getWidth();
-                desiredHeight = tempBitmap.getHeight();
+                desiredWidth = originBitmap.getWidth();
+                desiredHeight = originBitmap.getHeight();
             }
             widthSize = getOnMeasureSpec(widthMode, widthSize, desiredWidth);
             heightSize = getOnMeasureSpec(heightMode, heightSize, desiredHeight);
         }
-        ViewGroup parent = (ViewGroup) getParent();
-        Log.d(TAG, "onMeasure: " + parent.getMeasuredHeight());
-        bitmapDst.right = widthSize;
-        bitmapDst.bottom = heightSize;
         setMeasuredDimension(widthSize, heightSize);
+        if (currentState != null && tempBitmap != null && isImageCropped) {
+            float ratio = (float) heightSize / (float) widthSize;
+            float height = (tempBitmap.getHeight() * ratio);
+            bitmapDst.top = heightSize / 2f - height / 2f;
+            bitmapDst.right = widthSize;
+            bitmapDst.bottom = bitmapDst.top + height;
+        } else {
+            bitmapDst.top = 0;
+            bitmapDst.right = widthSize;
+            bitmapDst.bottom = heightSize;
+        }
     }
 
     @Override
@@ -254,8 +262,9 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         RectF crop = cropController.getCropShapeRect();
         tempBitmap = Bitmap.createBitmap(bitmap, (int) crop.left, (int) crop.top, (int) (crop.right - crop.left), (int) (crop.bottom - crop.top));
         matrix = scaleAndRotationController.dropToDefault();
+        isImageCropped = true;
         requestLayout();
-        operationController.applyCrop(crop, tempBitmap);
+        operationController.applyCrop();
     }
 
     private Bitmap getImage(boolean isCrop) {
@@ -306,7 +315,6 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
                 adjustUndoReundoListener.reundo(currentState.brightness, currentState.contrast);
             }
         }
-        tempBitmap = state.croppedBitmap == null ? originBitmap : state.croppedBitmap;
         invalidate();
         requestLayout();
     }
@@ -358,6 +366,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
         public ArrayList<BitmapState> undoStates;
         public BitmapState currentState;
         public boolean isCroppingMode;
+        public boolean isImageCropped;
         public float[] values;
 
         public MyState(Parcelable superState) {
@@ -373,6 +382,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
             source.readList(undoStates, BitmapState.class.getClassLoader());
             currentState = source.readParcelable(BitmapState.class.getClassLoader());
             isCroppingMode = source.readInt() == 1;
+            isImageCropped = source.readInt() == 1;
             values = new float[9];
             source.readFloatArray(values);
         }
@@ -385,6 +395,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
             source.readList(undoStates, BitmapState.class.getClassLoader());
             currentState = source.readParcelable(BitmapState.class.getClassLoader());
             isCroppingMode = source.readInt() == 1;
+            isImageCropped = source.readInt() == 1;
             values = new float[9];
             source.readFloatArray(values);
         }
@@ -396,6 +407,7 @@ public class PhotoEditor extends View implements EraseController.EraseStateChang
             dest.writeList(undoStates);
             dest.writeParcelable(currentState, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
             dest.writeInt(isCroppingMode ? 1 : 0);
+            dest.writeInt(isImageCropped ? 1 : 0);
             dest.writeFloatArray(values);
         }
 

@@ -1,7 +1,5 @@
 package com.office.photoedittoolapp.data;
 
-import android.graphics.Bitmap;
-import android.graphics.RectF;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -14,8 +12,6 @@ public class BitmapState implements Parcelable {
     private int rotate = 0;
     private boolean isFlipVertical;
     private boolean isFlipHorizontal;
-    public RectF cropShape;
-    public Bitmap croppedBitmap;
 
     public BitmapState() {
     }
@@ -27,8 +23,6 @@ public class BitmapState implements Parcelable {
         rotate = state.rotate;
         isFlipVertical = state.isFlipVertical;
         isFlipHorizontal = state.isFlipHorizontal;
-        cropShape = state.cropShape;
-        croppedBitmap = state.croppedBitmap;
     }
 
     protected BitmapState(Parcel in) {
@@ -38,8 +32,6 @@ public class BitmapState implements Parcelable {
         rotate = in.readInt();
         isFlipVertical = in.readByte() != 0;
         isFlipHorizontal = in.readByte() != 0;
-        cropShape = in.readParcelable(RectF.class.getClassLoader());
-        croppedBitmap = in.readParcelable(Bitmap.class.getClassLoader());
     }
 
     public static final Creator<BitmapState> CREATOR = new Creator<BitmapState>() {
@@ -135,7 +127,5 @@ public class BitmapState implements Parcelable {
         dest.writeInt(rotate);
         dest.writeByte((byte) (isFlipVertical ? 1 : 0));
         dest.writeByte((byte) (isFlipHorizontal ? 1 : 0));
-        dest.writeParcelable(cropShape, flags);
-        dest.writeParcelable(croppedBitmap, flags);
     }
 }
